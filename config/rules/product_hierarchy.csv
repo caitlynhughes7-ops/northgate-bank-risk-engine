@@ -1,0 +1,10 @@
+PROD_CD,PROD_DESC,SEGMENT,SECURED_FLAG
+2100,Residential mortgage - repayment,RETAIL_MORTGAGE,Y
+2101,Residential mortgage - interest only,RETAIL_MORTGAGE,Y
+2110,Buy to let mortgage,BTL_MORTGAGE,Y
+2120,SME commercial property,SME_TERM,Y
+2130,SME other secured,SME_TERM,Y
+2400,Personal loan,PERSONAL_LOAN,N
+2500,Credit card,CREDIT_CARD,N
+2600,Overdraft,OVERDRAFT,N
+2700,SME term unsecured,SME_TERM,N

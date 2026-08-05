@@ -1,0 +1,9 @@
+logs/
+*.log
+*.lst
+*.sas7bdat
+__pycache__/
+.venv/
+venv/
+.pytest_cache/
+.DS_Store

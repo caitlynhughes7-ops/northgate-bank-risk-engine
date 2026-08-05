@@ -1,0 +1,72 @@
+/*--------------------------------------------------------------------------
+  m_rpt_irb_backtest_lgd.sas
+  IRB LGD backtesting extract
+  Output: &OUTBOUND./irb_backtest_lgd_&PERIOD..csv
+--------------------------------------------------------------------------*/
+%macro rpt_irb_backtest_lgd(inds=stg.ecl_acct, period=);
+  %log_step(rpt_irb_backtest_lgd);
+
+  proc sql;
+    create table stg.rpt_irb_backtest_lgd as
+    select SEGMENT,
+           count(*)  as N_EXPOSURES,
+           sum(EAD)  as EAD  format=comma18.2,
+           sum(ECL)  as ECL  format=comma18.2,
+           sum(ECL)/sum(EAD) as COVERAGE format=percent9.4
+    from &inds
+    where FORBEARANCE_FL = 1
+    group by SEGMENT
+    order by SEGMENT;
+  quit;
+
+  proc export data=stg.rpt_irb_backtest_lgd
+       outfile="&OUTBOUND./irb_backtest_lgd_&period..csv"
+       dbms=csv replace;
+  run;
+%mend;
+
+%macro rpt_irb_backtest_lgd_validate(period=);
+  /* control totals circulated with the submission - do not remove, these are
+     referenced in the Regulatory Reporting control attestation                          */
+  %local n_null n_neg tot;
+  proc sql noprint;
+    select count(*) into :n_null from stg.rpt_irb_backtest_lgd where EAD is null;
+    select count(*) into :n_neg  from stg.rpt_irb_backtest_lgd where ECL < 0;
+    select sum(ECL) into :tot    from stg.rpt_irb_backtest_lgd;
+  quit;
+
+  %if &n_null > 0 %then %put ERROR: [irb_backtest_lgd] &n_null rows with null EAD;
+  %if &n_neg  > 0 %then %put ERROR: [irb_backtest_lgd] &n_neg rows with negative ECL;
+  %put NOTE: [irb_backtest_lgd] submission total ECL &tot;
+
+  /* prior period comparison - variance over 5% is queried by Regulatory Reporting */
+  proc sql;
+    create table stg.rpt_irb_backtest_lgd_var as
+    select c.*, p.ECL as ECL_PRIOR,
+           case when p.ECL > 0 then (c.ECL - p.ECL) / p.ECL else . end
+             as VAR_PCT format=percent9.2
+    from stg.rpt_irb_backtest_lgd as c
+    left join hist.rpt_irb_backtest_lgd_&PRIOR_YYYYMM as p
+      on c.SEGMENT = p.SEGMENT;
+  quit;
+
+  data _null_;
+    set stg.rpt_irb_backtest_lgd_var;
+    if not missing(VAR_PCT) and abs(VAR_PCT) > 0.15 then
+      put "WARNING: [irb_backtest_lgd] variance " VAR_PCT percent9.2 " exceeds tolerance";
+  run;
+%mend;
+
+%macro rpt_irb_backtest_lgd_archive(period=);
+  /* retained for 6 years per the group records retention schedule */
+  data hist.rpt_irb_backtest_lgd_&period.;
+    set stg.rpt_irb_backtest_lgd;
+    RUN_DTTM = datetime();
+    RUN_ENV  = "&ENV";
+    format RUN_DTTM datetime20.;
+  run;
+
+  proc datasets library=stg nolist;
+    delete rpt_irb_backtest_lgd_var;
+  quit;
+%mend;

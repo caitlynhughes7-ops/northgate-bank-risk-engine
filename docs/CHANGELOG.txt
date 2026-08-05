@@ -1,0 +1,18 @@
+2016-11-14  v3.0  Initial IFRS9 transition release.                            PW
+2017-02-03  v3.1  Fix: arrears bucket derivation for part-month.               PW
+2017-06-21  v3.2  Add BTL as separate product group. Haircuts copied from RM.  PW
+2018-01-09  v3.3  Cards CCF recalibrated.                                      PW
+2018-05-30  v3.4  Overlay macro added for FLI scenario weighting.              PW
+2018-11-12  v3.5  Perf: index on ACCOUNT_ID.                                   AF
+2019-04-02  v4.0  Lifetime PD term structure replaces 12m grossing.            PW
+2019-07-18  v4.1  PROD_CD renumbered group-wide (Finance alignment).
+                  Mapping tables refreshed EXCEPT collateral haircuts -
+                  refresh raised as separate ticket, see KI-021.               PW
+2019-09-05  v4.2  m_pd_ttc no longer called from driver (superseded by PIT).
+                  Left in place pending Model Governance retirement.           PW
+2020-02-14  v4.3  Hardcode scenario weights for year-end reporting freeze.
+                  TEMPORARY - revert after sign-off.                           PW
+2021-03-01  v4.4  Cosmetic: log formatting.                                    AF
+2022-06-10  v4.5  Add forbearance flag to SICR.                                AF
+2023-02-28  v4.6  Uplift disclosure output for Pillar 3 template change.       GCRA
+2024-05-14  v4.7  Tolerance widened on recon control (was failing spuriously). GCRA
