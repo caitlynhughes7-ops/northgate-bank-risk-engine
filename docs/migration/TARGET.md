@@ -33,6 +33,21 @@ and undocumented model code).
    from the approved specification, the migration must preserve the legacy
    behaviour and raise the departure for decision. It must not quietly "fix" it.
 
+## Running outside the bank network
+
+The SAS paths in `config/env/*.cfg` point at production mount points that are not
+available on the container platform. Use the checked in sample period instead:
+
+| Legacy | Repository |
+|---|---|
+| `&INBOUND./loan_tape_<period>.csv` | `data/input/loan_tape_202409.csv` |
+| `&INBOUND./collateral_<period>.csv` | `data/input/collateral_202409.csv` |
+| `&INBOUND./macro_scenarios.csv` | `data/input/macro_scenarios.csv` |
+| `&OUTBOUND./ecl_by_segment_<period>.csv` | `data/output/ecl_by_segment_202409.csv` |
+
+`data/expected/ecl_by_segment_202409.csv` is the legacy engine's output for that
+period, captured from the last production run, and is the parity baseline.
+
 ## Out of scope for the first phase
 
 - Corporate and Treasury exposures (separate engine).
