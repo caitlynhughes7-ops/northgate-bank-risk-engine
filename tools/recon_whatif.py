@@ -19,14 +19,42 @@ def _sum(frame, column):
     return None if values.empty else float(values.sum())
 
 
+def evaluate_tolerances(drawn, ead, tolerances):
+    if drawn is None or ead is None or drawn == 0:
+        return {
+            name: {
+                "tolerance": tolerance,
+                "pass": None,
+                "currency_excess": None,
+                "currency_headroom": None,
+            }
+            for name, tolerance in tolerances.items()
+        }
+    absolute_difference = abs(drawn - ead)
+    relative_difference = absolute_difference / abs(drawn)
+    return {
+        name: {
+            "tolerance": tolerance,
+            "pass": relative_difference <= tolerance,
+            "currency_excess": max(absolute_difference - abs(drawn) * tolerance, 0.0),
+            "currency_headroom": max(abs(drawn) * tolerance - absolute_difference, 0.0),
+        }
+        for name, tolerance in tolerances.items()
+    }
+
+
 def main() -> None:
     tape, _, _ = load_period(ROOT, PERIOD)
     arrears = derive_arrears(map_products(clean(tape)))
     _, account = run(PERIOD, ROOT, write=False)
     drawn = _sum(arrears, "DRAWN_BAL")
     ead = _sum(account, "EAD")
-    absolute_difference = abs(drawn - ead)
-    relative_difference = absolute_difference / abs(drawn) if drawn else None
+    absolute_difference = None if drawn is None or ead is None else abs(drawn - ead)
+    relative_difference = (
+        None
+        if absolute_difference is None or drawn == 0
+        else absolute_difference / abs(drawn)
+    )
     tolerances = {
         "prod_recon_tol": env_recon_tolerance("prod"),
         "uat_recon_tol": env_recon_tolerance("uat"),
@@ -36,14 +64,7 @@ def main() -> None:
             ]
         ),
     }
-    tolerance_results = {}
-    for name, tolerance in tolerances.items():
-        tolerance_results[name] = {
-            "tolerance": tolerance,
-            "pass": relative_difference <= tolerance,
-            "currency_excess": max(absolute_difference - abs(drawn) * tolerance, 0.0),
-            "currency_headroom": max(abs(drawn) * tolerance - absolute_difference, 0.0),
-        }
+    tolerance_results = evaluate_tolerances(drawn, ead, tolerances)
     rows = (
         account.groupby(["SEGMENT", "STAGE"], dropna=False, as_index=False)
         .agg(total_ead=("EAD", "sum"), total_ecl=("ECL", "sum"))

@@ -131,7 +131,7 @@ def test_best12_compacts_rounded_trailing_zeros():
     assert best12(1234567.89999999) == "   1234567.9"
     assert best12(364013988.00000006) == "   364013988"
     assert best12(12345678900.4) == " 12345678900"
-    assert best12(20000000000.5) == " 20000000000"
+    assert best12(20000000000.5) == " 20000000001"
 
 
 def test_engine_publishes_before_controls(tmp_path, capsys):

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP, localcontext
 from pathlib import Path
 import re
 from collections.abc import Callable
@@ -45,6 +46,18 @@ def _numeric_missing(value: object) -> bool:
     return not isinstance(value, str) and bool(pd.isna(value))
 
 
+def _round_decimal(number: float, decimals: int) -> Decimal:
+    exact = Decimal.from_float(number)
+    quantum = Decimal(1).scaleb(-decimals)
+    with localcontext() as context:
+        context.prec = max(
+            len(exact.as_tuple().digits),
+            exact.adjusted() + 1,
+            28,
+        ) + decimals + 2
+        return exact.quantize(quantum, rounding=ROUND_HALF_UP)
+
+
 def best12(value: float | int | None) -> str:
     """Render a number using the retained-width BEST12. convention."""
     params = _params()
@@ -63,7 +76,8 @@ def best12(value: float | int | None) -> str:
                 break
         if raw is None:
             for decimals in range(max_decimals, -1, -1):
-                candidate = f"{number:.{decimals}f}"
+                rounded = _round_decimal(number, decimals)
+                candidate = format(rounded, "f")
                 if len(candidate) <= width:
                     raw = (
                         candidate.rstrip("0").rstrip(".")
@@ -73,13 +87,15 @@ def best12(value: float | int | None) -> str:
                     break
         if raw is None:
             for decimals in range(exponent_decimals + 1):
-                candidate = f"{number:.{decimals}E}"
+                rounded = _round_decimal(number, decimals)
+                candidate = format(rounded, f".{decimals}E")
                 if len(candidate) <= width and float(candidate) == number:
                     raw = candidate
                     break
         if raw is None:
             for decimals in range(exponent_decimals, -1, -1):
-                candidate = f"{number:.{decimals}E}"
+                rounded = _round_decimal(number, decimals)
+                candidate = format(rounded, f".{decimals}E")
                 if len(candidate) <= width:
                     raw = candidate
                     break
