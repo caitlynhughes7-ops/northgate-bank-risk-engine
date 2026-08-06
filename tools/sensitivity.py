@@ -32,8 +32,10 @@ def _deltas(baseline, variant):
 
 
 def main() -> None:
-    baseline, _ = run("202409", ROOT)
-    configured, _ = run("202409", ROOT, weight_file="scenario_weights.csv")
+    baseline, _ = run("202409", ROOT, write=False)
+    configured, _ = run(
+        "202409", ROOT, weight_file="scenario_weights.csv", write=False
+    )
     haircut_row = table("collateral_haircuts.csv").loc[
         lambda frame: frame["PROD_CD"] == 110
     ].iloc[0]
@@ -41,6 +43,7 @@ def main() -> None:
         "202409",
         ROOT,
         haircut_overrides={2110: float(haircut_row["HAIRCUT"])},
+        write=False,
     )
     configured_rows, configured_total = _deltas(baseline, configured)
     btl_rows, btl_total = _deltas(baseline, btl_fixed)

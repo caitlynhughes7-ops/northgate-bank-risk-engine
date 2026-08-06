@@ -13,7 +13,13 @@ from .discount import discount
 from .ecl import calculate
 from .aggregate import aggregate
 
-def run(period: str, root: Path | None = None, weight_file: str | None = None, haircut_overrides: dict[int, float] | None = None):
+def run(
+    period: str,
+    root: Path | None = None,
+    weight_file: str | None = None,
+    haircut_overrides: dict[int, float] | None = None,
+    write: bool = True,
+):
     root = root or Path(__file__).resolve().parents[2]
     tape, collateral, scenarios = load_period(root, period)
     x = ead_ccf(derive_arrears(map_products(clean(tape))))
@@ -24,5 +30,6 @@ def run(period: str, root: Path | None = None, weight_file: str | None = None, h
     exposure = apply_overlay(stage(exposure))
     result = calculate(exposure, discount(curve))
     out = aggregate(result)
-    write_outputs(out, root, period)
+    if write:
+        write_outputs(out, root, period)
     return out, result
