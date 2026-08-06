@@ -65,7 +65,7 @@ def best12(value: float | int | None) -> str:
             for decimals in range(max_decimals, -1, -1):
                 candidate = f"{number:.{decimals}f}"
                 if len(candidate) <= width:
-                    raw = candidate
+                    raw = candidate.rstrip("0").rstrip(".")
                     break
         if raw is None:
             for decimals in range(exponent_decimals + 1):

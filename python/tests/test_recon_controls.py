@@ -126,6 +126,12 @@ def test_best12_cases():
     assert best12(1e100) == "      1E+100"
 
 
+def test_best12_compacts_rounded_trailing_zeros():
+    # BEST12. rounds to fit and does not retain meaningless fixed-point zeros.
+    assert best12(1234567.89999999) == "   1234567.9"
+    assert best12(364013988.00000006) == "   364013988"
+
+
 def test_engine_publishes_before_controls(tmp_path, capsys):
     # EO-05: controls run after disclosure and GL publication, not before it.
     shutil.copytree(ROOT / "data/input", tmp_path / "data/input")

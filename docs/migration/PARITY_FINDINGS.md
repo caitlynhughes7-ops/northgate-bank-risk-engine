@@ -115,7 +115,8 @@ recorded with the regression run and must accompany the model change record.
   and trailing blanks are not trimmed”; this is a documentation-based
   assumption, not a captured log artifact. Width is configurable through
   `recon_controls.csv:best12_width`. Currency impact: none; this affects
-  the log representation only. Exact SAS E-notation rendering is an
+  the log representation only; fixed-point rounding is rendered compactly
+  without trailing-zero padding. Exact SAS E-notation rendering is an
   untested assumption, unreachable by realistic control totals. Decision
   required: accept behaviour-pinning tests as evidence; reproduce the
   rendering with `python/ecl/recon.py`.
