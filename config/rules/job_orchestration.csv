@@ -1,0 +1,17 @@
+KEY,VALUE
+# default_env is intentionally not repeated here: it is read from env_bootstrap.csv; that is the same value the SAS bootstrap defaults to.
+log_dir,../logs
+working_dir,sas
+log_filename_template,ecl_{period}_{env}
+listing_filename_template,ecl_{period}_{env}
+log_suffix,.log
+listing_suffix,.lst
+error_pattern,^ERROR
+exit_missing_args,2
+exit_error,1
+exit_success,0
+log_open_error_template,unable to open log {path}: {detail}
+usage_template,usage: {prog} <YYYYMM> [prod|uat]
+error_template,"ECL run reported errors, see log"
+success_template,ECL run complete for {period} ({env})
+sysparm_template,{period} {env}
