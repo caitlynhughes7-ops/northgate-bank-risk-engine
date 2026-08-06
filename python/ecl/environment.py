@@ -167,7 +167,8 @@ def bootstrap(sysparm: str = "", base: Path | None = None) -> Environment:
             base=root,
             note=f"NOTE: ECL engine initialised for environment {settings.env}",
         )
-        environment._stg_finalizer = finalize(environment, rmtree, stg_path, True)
+        if environment.stg.persistence == "ephemeral":
+            environment._stg_finalizer = finalize(environment, rmtree, stg_path, True)
         return environment
     except BaseException:
         rmtree(stg_path, ignore_errors=True)

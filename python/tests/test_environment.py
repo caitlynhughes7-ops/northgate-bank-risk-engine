@@ -3,6 +3,8 @@ from gc import collect
 
 import pytest
 
+import ecl.environment as environment_module
+from ecl.config import table
 from ecl import formats
 from ecl.environment import (
     EnvironmentBootstrapError,
@@ -91,6 +93,29 @@ def test_close_is_idempotent() -> None:
     environment.close()
     environment.close()
     assert not stg_path.exists()
+
+
+def test_persistent_stg_survives_close_and_garbage_collection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library_rules = table("env_libraries.csv").copy()
+    library_rules.loc[library_rules["LIBREF"] == "stg", "PERSISTENCE"] = "persistent"
+    original_table = environment_module.table
+
+    def table_with_persistent_stg(name: str):
+        if name == "env_libraries.csv":
+            return library_rules
+        return original_table(name)
+
+    monkeypatch.setattr(environment_module, "table", table_with_persistent_stg)
+    environment = bootstrap(base=ROOT)
+    stg_path = environment.stg.path
+    environment.close()
+    assert stg_path.is_dir()
+    del environment
+    collect()
+    assert stg_path.is_dir()
+    stg_path.rmdir()
 
 
 def test_hist_is_assigned_but_unused_by_batch() -> None:
