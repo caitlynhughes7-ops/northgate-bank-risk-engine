@@ -20,7 +20,6 @@ def run(
     weight_file: str | None = None,
     haircut_overrides: dict[int, float] | None = None,
     write: bool = True,
-    env: str | None = None,
 ):
     root = root or Path(__file__).resolve().parents[2]
     tape, collateral, scenarios = load_period(root, period)
@@ -35,5 +34,5 @@ def run(
     out = aggregate(result)
     if write:
         write_outputs(out, root, period)
-    recon_controls(arrears, result, env=env)
+    recon_controls(arrears, result)
     return out, result

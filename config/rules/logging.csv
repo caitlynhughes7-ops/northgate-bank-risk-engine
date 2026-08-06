@@ -1,5 +1,6 @@
 PARAM,VALUE
 log_note_prefix,NOTE:
 log_error_prefix,ERROR:
+log_observability_prefix,OBS:
 log_tag,[ECL]
 log_timestamp_format,datetime20

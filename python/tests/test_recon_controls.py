@@ -5,8 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import ecl.cli as cli_module
-import ecl.engine as engine_module
 from ecl.engine import run
 import ecl.recon as recon_module
 from ecl.recon import best12, recon_controls
@@ -99,38 +97,19 @@ def test_recon_controls_writes_no_file_or_dataset(tmp_path, monkeypatch):
     assert list(tmp_path.rglob("*")) == []
 
 
-def test_recon_tolerance_is_loaded_but_not_applied():
-    # SC-10: RECON_TOL is loaded from the environment but never compared.
-    tape, account = _frames()
-    for env, expected in (("uat", 0.005), ("prod", 0.0005)):
-        lines = []
-        result = recon_controls(tape, account, env=env, now=NOW, emit=lines.append)
-        assert result.recon_tolerance_loaded == expected
-        assert result.recon_tolerance_applied is False
-        assert not any(token in "\n".join(lines) for token in ("PASS", "FAIL", "comparison"))
-
-
-def test_unknown_env_keeps_log_only_control_non_failing():
-    # Missing environment configuration cannot abort the legacy log-only unit.
+def test_recon_controls_reads_no_environment_or_comparison_configuration(monkeypatch):
+    # Legacy recon_controls computes and logs totals without reading RECON_TOL.
     tape, account = _frames()
     lines = []
-    result = recon_controls(tape, account, env="unknown", now=NOW, emit=lines.append)
-    assert result.recon_tolerance_loaded is None
+    monkeypatch.setattr(
+        recon_module,
+        "env_recon_tolerance",
+        lambda _: (_ for _ in ()).throw(AssertionError("environment read")),
+    )
+    result = recon_controls(tape, account, now=NOW, emit=lines.append)
     assert len(lines) == 2
-
-
-def test_missing_recon_tolerance_keeps_log_only_control_non_failing(monkeypatch):
-    # An environment without RECON_TOL still emits both legacy log lines.
-    tape, account = _frames()
-
-    def missing_tolerance(_):
-        raise ValueError("RECON_TOL is not defined")
-
-    monkeypatch.setattr(recon_module, "env_recon_tolerance", missing_tolerance)
-    lines = []
-    result = recon_controls(tape, account, env="uat", now=NOW, emit=lines.append)
-    assert result.recon_tolerance_loaded is None
-    assert len(lines) == 2
+    assert not hasattr(result, "recon_tolerance_loaded")
+    assert not hasattr(result, "recon_tolerance_applied")
 
 
 def test_shuffled_rows_have_identical_control_line():
@@ -177,50 +156,3 @@ def test_engine_publishes_before_controls(tmp_path, capsys):
     )
     assert (tmp_path / "data/output/ecl_by_segment_202409.csv").exists()
     assert (tmp_path / "data/output/ECL_GL_FEED_202409.txt").exists()
-
-
-def test_engine_forwards_prod_environment_to_recon(monkeypatch):
-    # The run environment resolves the legacy PROD RECON_TOL value.
-    captured = []
-
-    def capture(*args, **kwargs):
-        result = recon_module.recon_controls(*args, **kwargs)
-        captured.append((kwargs["env"], result.recon_tolerance_loaded))
-
-    monkeypatch.setattr(
-        engine_module,
-        "recon_controls",
-        capture,
-    )
-    run("202409", ROOT, write=False, env="prod")
-    assert captured == [("prod", 0.0005)]
-
-
-def test_engine_default_environment_forwards_none_to_recon(monkeypatch):
-    # Omitting env preserves the configured UAT default in recon_controls.
-    captured = []
-
-    def capture(*args, **kwargs):
-        result = recon_module.recon_controls(*args, **kwargs)
-        captured.append((kwargs["env"], result.recon_tolerance_loaded))
-
-    monkeypatch.setattr(
-        engine_module,
-        "recon_controls",
-        capture,
-    )
-    run("202409", ROOT, write=False)
-    assert captured == [(None, 0.005)]
-
-
-def test_cli_forwards_env_option(monkeypatch):
-    # The CLI passes --env through to the engine without altering calculations.
-    captured = []
-    monkeypatch.setattr(
-        cli_module,
-        "run",
-        lambda period, env=None: captured.append((period, env)),
-    )
-    monkeypatch.setattr("sys.argv", ["ecl", "--period", "202409", "--env", "prod"])
-    cli_module.main()
-    assert captured == [("202409", "prod")]

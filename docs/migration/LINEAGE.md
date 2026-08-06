@@ -54,9 +54,29 @@ the legacy macro and spec §8.
 | Null-stage threshold | `recon_controls.csv:null_stage_error_threshold` | `recon.py` / `%if &n_nullstage > 0` | §8 control intent |
 | Timestamp | Runtime clock via `log_step` | `util_logging.py` / `%log_step` | no specification basis |
 | BEST12 rendering | Configured format and retained width | `recon.py` / SQL `INTO` macro variables | no explicit basis; documented assumption |
-| RECON_TOL | Resolved from the run environment, exposed but unused | `recon.py` / `%let RECON_TOL` from `-sysparm "<period> <env>"` | required by §8 but absent from legacy code |
+| RECON_TOL | Not read by the migrated control unit; standalone observability tooling reads candidate environment values | `recon_observability.py` / environment `%let RECON_TOL` | required by §8 but absent from legacy code |
 
 The corrected comparison, tolerance, and blocking order required by §8 have
 no implementation basis in the legacy macro and remain an open governance
 decision. `tools/recon_whatif.py` quantifies candidate outcomes without
 changing the behaviour-equivalence control.
+
+## Recon observability artifact lineage
+
+The standalone `tools/recon_observability.py` tool is not invoked by
+`engine.run()` and writes only
+`data/output/observability/recon_observability_<period>.json`. It provides
+non-blocking §8 evidence; no verdict can abort or alter the batch.
+
+| Artifact field | Source and transformation | Implementation | Spec basis |
+|---|---|---|---|
+| `control_1.sum_drawn_bal` | `SUM(DRAWN_BAL)` over the arrears tape | `recon_observability.py` / `m_recon_controls.sas` | §8 control intent |
+| `control_1.sum_ead` | `SUM(EAD)` over account-level ECL | `recon_observability.py` / `m_recon_controls.sas` | §8 control intent |
+| `control_1.absolute_difference` | Absolute difference of the two totals | `recon_observability.py` | §8 control intent |
+| `control_1.relative_difference` | Absolute difference divided by drawn total; null for missing/zero denominator | `recon_observability.py` | §8 control intent |
+| `control_1.env_tolerance_breach` | Relative difference against `RECON_TOL` from selected environment | `recon_observability.py` | §8 candidate |
+| `control_1.spec_section_8_tolerance_breach` | Relative difference against configured `spec_section_8_tolerance` | `recon_observability.py` | §8 candidate |
+| `control_2.null_stage_count` | Numeric-missing `STAGE` row count | `recon_observability.py` / `m_recon_controls.sas` | §8 control intent |
+| `control_3` | Prior-month coverage comparison unavailable | `recon_observability.py` | §8 control intent |
+| `basis.legacy_pairing_open_question` | EAD includes `CCF × UNDRAWN` under §5 | `recon_observability.py` | unresolved basis |
+| Log prefix | `logging.csv:log_observability_prefix` (`OBS:`) | `recon_observability.py` | no specification basis |

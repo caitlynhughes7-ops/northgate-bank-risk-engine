@@ -13,6 +13,7 @@ jobs:
       - run: PYTHONPATH=python pytest -q
       - run: PYTHONPATH=python python tools/sensitivity.py
       - run: PYTHONPATH=python python tools/recon_whatif.py
+      - run: PYTHONPATH=python python tools/recon_observability.py
       - run: PYTHONPATH=python python tools/regression_harness.py
       - uses: actions/upload-artifact@v4
         if: always()
@@ -29,3 +30,8 @@ jobs:
         with:
           name: recon-whatif-202409
           path: data/output/whatif/recon_controls_202409.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recon-observability-202409
+          path: data/output/observability/recon_observability_202409.json

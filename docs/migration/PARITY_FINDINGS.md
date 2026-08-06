@@ -86,17 +86,18 @@ recorded with the regression run and must accompany the model change record.
   Governance / Ops must decide the destination and timestamp policy; this
   migration does not resolve it.
 * **SC-10 recon comparison absent:** `%recon_controls` computes
-  `DRAWN_BAL`, `EAD`, and `ECL`, but never compares the totals. `RECON_TOL`
-  is loaded from the environment and unused, despite the v4.7 changelog
-  saying that the tolerance was widened; there is no tolerance to widen.
-  The tolerance is read for evidence only; if it is absent or unavailable,
-  the log-only control records no loaded value and cannot fail the run.
+  `DRAWN_BAL`, `EAD`, and `ECL`, but never compares the totals and does not
+  read `RECON_TOL`, despite the v4.7 changelog saying that the tolerance was
+  widened; there is no tolerance to widen. The standalone observability tool
+  reports candidate tolerance breaches without changing the run. This leaves
+  the bank with no effective reconciliation control on this engine; the open
+  decision is recorded in `docs/migration/DECISION_REGISTER.md`.
   On 202409, the what-if comparison is **£912,115.62** (relative
   **0.251201%**) and fails PROD (0.05%, currency excess **£730,564.69**)
   and spec §8 (0.01%, excess **£875,805.44**) but passes UAT (0.5%).
   Cause: no comparison branch exists in `m_recon_controls.sas`. Decision
   required: determine the correct totals and tolerance; reproduce with
-  `tools/recon_whatif.py`.
+  `tools/recon_whatif.py` and `tools/recon_observability.py`.
 * **EO-05 controls run after publication:** the control macro is invoked
   after disclosure and GL output, so a corrected blocking control would
   not prevent publication. On 202409, the potentially withheld publication

@@ -17,8 +17,6 @@ class ReconControlsResult:
     ead: float | None
     ecl: float | None
     null_stage_count: int
-    recon_tolerance_loaded: float | None
-    recon_tolerance_applied: bool = False
 
 
 def _params() -> dict[str, str]:
@@ -126,17 +124,11 @@ def recon_controls(
     tape: pd.DataFrame,
     ecl_acct: pd.DataFrame,
     *,
-    env: str | None = None,
     now: datetime | None = None,
     emit: Callable[[str], None] | None = None,
 ) -> ReconControlsResult:
     params = _params()
-    selected_env = env or params["default_env"]
     log_step("recon_controls", now=now, emit=emit)
-    try:
-        tolerance = env_recon_tolerance(selected_env)
-    except (FileNotFoundError, ValueError):
-        tolerance = None
 
     drawn = _sas_sum(tape, "DRAWN_BAL")
     ead = _sas_sum(ecl_acct, "EAD")
@@ -160,5 +152,4 @@ def recon_controls(
         ead=ead,
         ecl=ecl,
         null_stage_count=null_stage_count,
-        recon_tolerance_loaded=tolerance,
     )
