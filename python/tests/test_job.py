@@ -147,7 +147,10 @@ def test_missing_log_matches_set_e_exemption_and_reports_clean(
     stdout, stderr = StringIO(), StringIO()
     assert job.run("202409", "uat", stdout=stdout, stderr=stderr) == 0
     assert stdout.getvalue() == "ECL run complete for 202409 (uat)\n"
-    assert "grep:" in stderr.getvalue()
+    assert (
+        stderr.getvalue()
+        == "grep: ../logs/ecl_202409_uat.log: No such file or directory\n"
+    )
 
 
 def test_unreadable_log_matches_set_e_exemption_and_reports_clean(
@@ -167,7 +170,7 @@ def test_unreadable_log_matches_set_e_exemption_and_reports_clean(
     try:
         assert job.run("202409", "uat", stdout=stdout, stderr=stderr) == 0
         assert stdout.getvalue() == "ECL run complete for 202409 (uat)\n"
-        assert "grep:" in stderr.getvalue()
+        assert stderr.getvalue() == "grep: ../logs/ecl_202409_uat.log: Permission denied\n"
     finally:
         log_path.chmod(0o644)
 

@@ -54,13 +54,13 @@ def _paths(period: str, env: str, rules: dict[str, str]) -> tuple[Path, Path]:
     return log, listing
 
 
-def count_log_errors(log_path: Path, pattern: str) -> int | None:
-    """Count line-start errors, returning None when grep would fail to read."""
+def count_log_errors(log_path: Path, pattern: str) -> tuple[int | None, OSError | None]:
+    """Count line-start errors, returning grep-like read failures."""
     try:
         with log_path.open(errors="replace") as stream:
-            return sum(bool(re.match(pattern, line)) for line in stream)
-    except OSError:
-        return None
+            return sum(bool(re.match(pattern, line)) for line in stream), None
+    except OSError as error:
+        return None, error
 
 
 def run(
@@ -89,10 +89,11 @@ def run(
             traceback.print_exc(file=log_stream)
         return int(rules["exit_error"])
 
-    count = count_log_errors(log_path, rules["error_pattern"])
+    count, scan_error = count_log_errors(log_path, rules["error_pattern"])
     if count is None:
         missing_path = Path(os.path.relpath(log_path, ROOT / rules["working_dir"]))
-        print(f"grep: {missing_path}: No such file or directory", file=stderr)
+        detail = scan_error.strerror if scan_error and scan_error.strerror else str(scan_error)
+        print(f"grep: {missing_path}: {detail}", file=stderr)
     else:
         print(count, file=stdout)
     if count is not None and count > 0:
