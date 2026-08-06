@@ -33,3 +33,13 @@ macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
 | Step token | Python caller | `util_logging.py` / `m_util_logging.sas` | no specification basis |
 | Message token | Python caller | `util_logging.py` / `m_util_logging.sas` | no specification basis |
 | Timestamp | System clock (`datetime.now()` by default) | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+
+## Row-count assertion lineage
+
+| Emitted component | Source | Python / SAS implementation | Spec basis |
+|---|---|---|---|
+| Severity prefix (`NOTE:` or `ERROR:`) | `config/rules/logging.csv` (`log_note_prefix`, `log_error_prefix`) | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+| Tag (`[ECL]`) | `config/rules/logging.csv` (`log_tag`) | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+| Dataset name | Legacy call-site dataset token (`stg.loan_tape`, `stg.tape_clean`) | `io.py`, `clean.py` / `m_load_loan_tape.sas`, `m_clean_loan_tape.sas` | no specification basis |
+| Row count | Number of DataFrame rows, including duplicates and all-missing rows | `util_logging.py` / PROC SQL `count(*)` | no specification basis |
+| Minimum-row threshold | `config/rules/row_count_assertions.csv` (`MINROWS`) | `util_logging.py` / `%assert_rows(..., minrows=...)` | no specification basis |

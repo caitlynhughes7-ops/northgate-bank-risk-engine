@@ -1,10 +1,16 @@
 from datetime import datetime
 from pathlib import Path
+import subprocess
+import sys
 
+import pandas as pd
 import pytest
 
+from ecl.config import table
 from ecl.engine import run
-from ecl.util_logging import format_datetime20, log_step
+from ecl.clean import clean
+from ecl.io import load_period
+from ecl.util_logging import EclAbort, assert_rows, configured_minrows, format_datetime20, log_step
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -72,7 +78,9 @@ def test_engine_logs_legacy_steps_in_driver_order(capsys):
     names = [line.split(" ")[2] for line in capsys.readouterr().out.splitlines()]
     assert names == [
         "load_loan_tape",
+        "stg.loan_tape",
         "clean_loan_tape",
+        "stg.tape_clean",
         "map_product_hierarchy",
         "derive_arrears",
         "ead_ccf",
@@ -87,3 +95,109 @@ def test_engine_logs_legacy_steps_in_driver_order(capsys):
         "aggregate_reporting",
         "export_disclosure",
     ]
+
+
+def test_assert_rows_emits_exact_note_line_on_pass():
+    lines = []
+    assert_rows(pd.DataFrame(index=range(2)), "stg.loan_tape", 2, emit=lines.append)
+    assert lines == ["NOTE: [ECL] stg.loan_tape row count 2"]
+
+
+def test_assert_rows_emits_exact_error_line_and_aborts():
+    lines = []
+    with pytest.raises(EclAbort):
+        assert_rows(pd.DataFrame(index=range(1)), "stg.tape_clean", 2, emit=lines.append)
+    assert lines == ["ERROR: [ECL] stg.tape_clean has 1 rows, expected at least 2"]
+    assert lines[0].startswith("ERROR")
+
+
+@pytest.mark.parametrize(("count", "minimum"), [(2, 2), (1, 2), (0, 0)])
+def test_assert_rows_uses_strict_explicit_threshold(count, minimum):
+    lines = []
+    if count < minimum:
+        with pytest.raises(EclAbort):
+            assert_rows(pd.DataFrame(index=range(count)), "test", minimum, emit=lines.append)
+    else:
+        assert_rows(pd.DataFrame(index=range(count)), "test", minimum, emit=lines.append)
+    assert lines[0].startswith("ERROR") is (count < minimum)
+
+
+def test_assert_rows_uses_configured_default_threshold():
+    params = dict(zip(table("logging.csv").PARAM, table("logging.csv").VALUE))
+    assert int(params["assert_rows_default_minrows"]) == 1
+    lines = []
+    assert_rows(pd.DataFrame(index=range(1)), "test", emit=lines.append)
+    assert lines == ["NOTE: [ECL] test row count 1"]
+    with pytest.raises(EclAbort, match="test has 0 rows, expected at least 1"):
+        assert_rows(pd.DataFrame(index=range(0)), "test", emit=lines.append)
+
+
+def test_configured_live_row_count_thresholds_match_legacy_values():
+    assert configured_minrows("stg.loan_tape") == 100
+    assert configured_minrows("stg.tape_clean") == 100
+
+
+def test_assert_rows_counts_duplicate_and_all_nan_rows():
+    frame = pd.DataFrame({"value": [float("nan"), float("nan"), 1, 1]})
+    lines = []
+    assert_rows(frame, "test", 4, emit=lines.append)
+    assert lines == ["NOTE: [ECL] test row count 4"]
+
+
+def test_load_period_asserts_before_collateral_is_read(tmp_path, capsys):
+    input_dir = tmp_path / "data/input"
+    input_dir.mkdir(parents=True)
+    pd.DataFrame({"ACCOUNT_ID": [1] * 99}).to_csv(input_dir / "loan_tape_short.csv", index=False)
+    with pytest.raises(EclAbort):
+        load_period(tmp_path, "short")
+    assert capsys.readouterr().out.splitlines()[-1] == "ERROR: [ECL] stg.loan_tape has 99 rows, expected at least 100"
+
+
+def test_abort_halts_engine_before_output_file_is_written(tmp_path):
+    input_dir = tmp_path / "data/input"
+    input_dir.mkdir(parents=True)
+    pd.DataFrame({"ACCOUNT_ID": [1] * 99}).to_csv(input_dir / "loan_tape_short.csv", index=False)
+    with pytest.raises(EclAbort):
+        run("short", tmp_path)
+    output_dir = tmp_path / "data/output"
+    assert not output_dir.exists() or not any(output_dir.iterdir())
+
+
+def test_clean_asserts_configured_threshold_and_legacy_name(capsys):
+    frame = pd.DataFrame(
+        {
+            "ACCOUNT_ID": range(99),
+            "DPD": ["0"] * 99,
+            "FORBEARANCE": ["N"] * 99,
+            "WATCHLIST": ["N"] * 99,
+            "DEFAULT_IND": ["N"] * 99,
+            "IO_FLAG": ["N"] * 99,
+            "MONTHLY_PAYMENT": [1] * 99,
+            "EIR": [0.1] * 99,
+            "DRAWN_BAL": [1] * 99,
+            "UNDRAWN": [0] * 99,
+        }
+    )
+    with pytest.raises(EclAbort):
+        clean(frame)
+    assert capsys.readouterr().out.splitlines()[-1] == "ERROR: [ECL] stg.tape_clean has 99 rows, expected at least 100"
+
+
+def test_cli_returns_nonzero_on_assert_abort(monkeypatch):
+    from ecl import cli
+
+    monkeypatch.setattr(cli, "run", lambda period: (_ for _ in ()).throw(EclAbort()))
+    monkeypatch.setattr(sys, "argv", ["ecl", "--period", "short"])
+    assert cli.main() == 1
+
+
+def test_cli_process_exits_nonzero_on_assert_abort():
+    code = (
+        f"import sys; sys.path.insert(0, {str(ROOT / 'python')!r}); "
+        "import ecl.cli; from ecl.util_logging import EclAbort; "
+        "ecl.cli.run = lambda period: (_ for _ in ()).throw(EclAbort()); "
+        "sys.argv = ['ecl', '--period', 'short']; "
+        "raise SystemExit(ecl.cli.main())"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+    assert result.returncode != 0

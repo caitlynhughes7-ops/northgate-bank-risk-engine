@@ -1,5 +1,5 @@
 import pandas as pd
-from .util_logging import log_step
+from .util_logging import assert_rows, configured_minrows, log_step
 
 def clean(tape: pd.DataFrame) -> pd.DataFrame:
     log_step("clean_loan_tape")
@@ -14,4 +14,6 @@ def clean(tape: pd.DataFrame) -> pd.DataFrame:
         d[target] = d[source].astype("string").str.upper().isin(["Y", "YES", "1"])
     d.loc[d["IO_FLAG"].astype("string").str.strip() == "Y", "MONTHLY_PAYMENT"] = 0
     d.loc[d["EIR"] > 1, "EIR"] = d.loc[d["EIR"] > 1, "EIR"] / 100
-    return d.drop(columns=["DPD", "FORBEARANCE", "WATCHLIST", "DEFAULT_IND"])
+    cleaned = d.drop(columns=["DPD", "FORBEARANCE", "WATCHLIST", "DEFAULT_IND"])
+    assert_rows(cleaned, "stg.tape_clean", configured_minrows("stg.tape_clean"))
+    return cleaned

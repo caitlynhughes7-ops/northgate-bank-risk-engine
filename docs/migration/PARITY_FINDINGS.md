@@ -85,3 +85,33 @@ recorded with the regression run and must accompany the model change record.
   naive as SAS `datetime()` is) is unresolved. Decision required: Model
   Governance / Ops must decide the destination and timestamp policy; this
   migration does not resolve it.
+* **Row-count assertions:** no captured legacy artifact exists for this unit.
+  The Python port is evidenced by behaviour-pinning tests only, with no parity
+  claim. Cause: `%assert_rows` is a control-flow guard rather than a numeric
+  output. Consequence: the tests pin its rendered lines, thresholds, and abort
+  behaviour. Decision required: accept behaviour-pinning tests as the evidence
+  basis.
+* **EO-08 row-count guard scope:** `%assert_rows` is the only abort in the
+  engine; `%put ERROR:` elsewhere does not stop the batch, and only the loan
+  tape and cleaned tape are protected. Cause: only those two live engine call
+  sites are invoked by the batch. Consequence: other datasets can continue
+  without this guard. Decision required: confirm the protected scope.
+* **Never-invoked ETL guards:** the 15 ETL `%assert_rows` call sites are not
+  wired into Python. Cause: discovery `04_never_invoked.md` shows those macros
+  are never invoked by the batch. Consequence: the port protects only the two
+  live engine datasets. Decision required: none for this migration; retain the
+  live-call-site scope.
+* **OPEN ESCALATION — abort exit status:** `%abort cancel` cancels submitted
+  statements and the SAS batch return code is not itself the failure signal;
+  the wrapper detects failure only via `^ERROR` in the log. The Python port
+  emits the greppable ERROR line and exits nonzero, which is stricter than the
+  legacy exit code. Cause: Python CLI process semantics differ from SAS batch
+  cancellation. Consequence: orchestration may observe a failure signal that
+  legacy orchestration did not use. Decision required: Model Governance/Ops
+  confirmation is needed.
+* **OPEN ESCALATION — missing dataset behaviour:** legacy behaviour when `&ds`
+  does not exist or PROC SQL count fails (`&n` unresolved) is ambiguous and is
+  not reproduced. Cause: the Python port receives an in-memory frame rather
+  than resolving a SAS dataset reference. Consequence: missing-input failure
+  semantics remain unspecified. Decision required: decide the intended
+  behaviour; this migration does not guess a resolution.

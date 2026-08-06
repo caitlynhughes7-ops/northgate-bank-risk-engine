@@ -1,0 +1,3 @@
+DATASET,MINROWS
+stg.loan_tape,100
+stg.tape_clean,100
