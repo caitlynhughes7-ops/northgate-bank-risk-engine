@@ -1,0 +1,7 @@
+KEY,VALUE
+default_env,uat
+base_relative_path,..
+config_env_dir,config/env
+config_env_suffix,.cfg
+autocall_macro_dir,sas/macros
+sysparm_env_position,2

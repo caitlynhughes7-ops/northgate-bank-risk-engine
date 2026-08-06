@@ -1,0 +1,5 @@
+LIBREF,SOURCE,ACCESS,PERSISTENCE,USED_BY_BATCH,NOTE
+raw,INBOUND,readonly,persistent,True,Inbound source assigned read-only
+stg,WORK,readwrite,ephemeral,True,WORK-backed staging library
+out,OUTBOUND,readwrite,persistent,True,Outbound results library
+hist,HISTLIB,readwrite,persistent,False,Assigned but unused by batch

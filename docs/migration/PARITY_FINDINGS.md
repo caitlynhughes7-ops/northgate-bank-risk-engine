@@ -90,3 +90,49 @@ decision.
   This is a known presentation difference rather than preserved legacy
   behaviour, and follows the convention already set by the migrated
   `$seg.`/`stage.` unit; raised for Model Governance decision.
+
+## Environment bootstrap
+
+The following items have no captured legacy artifact for this unit. No
+numeric impact can be quantified, and no numeric parity claim is made.
+For each item, **legacy behaviour preserved, raised for Model Governance
+decision**.
+
+* **Silent UAT default:** an absent second SYSparm token selects `uat`,
+  loading the UAT config without a warning. Cause: `%_env` defaults an empty
+  argument. Consequence: an omitted environment can run against UAT.
+  Decision required: determine whether an explicit environment should become
+  mandatory.
+* **EO-06 ephemeral staging:** `stg` is WORK-backed and is deleted when the
+  Python environment closes. Cause: `libname stg "&ROOT"` where ROOT is
+  WORK. Consequence: nothing persists account-level ECL. Decision required:
+  confirm whether any downstream persistence is required.
+* **EO-07 dead history library:** `hist` is assigned but unused by the batch.
+  Cause: the autoexec assigns the libref without a reachable consumer.
+  Consequence: the configured history location has no effect. Decision
+  required: confirm whether history processing is intentionally absent.
+* **EO-09 cwd dependence:** `&BASE = ..` resolves config and includes from the
+  run directory. Cause: the SAS autoexec uses a relative base. Consequence:
+  an incorrect working directory fails bootstrap. We deliberately did not
+  make this robust because that would change legacy behaviour. Decision
+  required: approve any future operational path fix.
+* **SC-10 dead RECON_TOL:** the value is loaded and retained but referenced
+  nowhere in the bootstrap unit. Cause: `%let RECON_TOL` has no consumer.
+  Consequence: changing it has no effect here. Decision required: identify its
+  intended reconciliation owner.
+* **EO-10 autocall unresolvable (OPEN QUESTION):** the configured autocall
+  directory contains `m_`-prefixed files while SAS autocall lookup uses the
+  macro name. Cause: filename and macro-name conventions do not match.
+  Consequence: those macros cannot be resolved by the configured autocall
+  path. Decision required: this remains an OPEN QUESTION escalated to the
+  user, and is not resolved by this migration.
+* **Environment-name case sensitivity:** the selected environment is
+  interpolated verbatim into the config filename. Cause: `%include` uses the
+  unnormalised token. Consequence: `UAT` seeks `UAT.cfg` and fails on a
+  case-sensitive filesystem. Decision required: decide whether naming policy
+  should change.
+* **MAX_TERM_M has two definitions:** both `config/env/*.cfg` and
+  `config/rules/model_params.csv` define `max_term_m=120`. Cause: separate
+  legacy configuration channels. Consequence: there is no single source of
+  truth. Decision required: Model Governance must choose an owner; this unit
+  does not resolve the conflict.
