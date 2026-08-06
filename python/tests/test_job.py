@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import stat
 from io import StringIO
 from pathlib import Path
@@ -147,6 +148,46 @@ def test_missing_log_matches_set_e_exemption_and_reports_clean(
     assert job.run("202409", "uat", stdout=stdout, stderr=stderr) == 0
     assert stdout.getvalue() == "ECL run complete for 202409 (uat)\n"
     assert "grep:" in stderr.getvalue()
+
+
+def test_unreadable_log_matches_set_e_exemption_and_reports_clean(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    if os.geteuid() == 0:
+        pytest.skip("root can read chmod-000 files")
+    monkeypatch.setattr(job, "ROOT", tmp_path)
+    monkeypatch.setattr(job, "bootstrap", lambda *a, **k: _Bootstrap())
+
+    def fake_engine(period: str, root: Path):
+        (tmp_path / "logs" / "ecl_202409_uat.log").chmod(0)
+
+    monkeypatch.setattr(job.engine, "run", fake_engine)
+    stdout, stderr = StringIO(), StringIO()
+    log_path = tmp_path / "logs" / "ecl_202409_uat.log"
+    try:
+        assert job.run("202409", "uat", stdout=stdout, stderr=stderr) == 0
+        assert stdout.getvalue() == "ECL run complete for 202409 (uat)\n"
+        assert "grep:" in stderr.getvalue()
+    finally:
+        log_path.chmod(0o644)
+
+
+def test_undecodable_log_bytes_are_replaced_without_losing_error_count(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(job, "ROOT", tmp_path)
+    monkeypatch.setattr(job, "bootstrap", lambda *a, **k: _Bootstrap())
+
+    def fake_engine(period: str, root: Path):
+        (tmp_path / "logs" / "ecl_202409_uat.log").write_bytes(
+            b"ERROR: legitimate line\n\xffnot an error\n"
+        )
+
+    monkeypatch.setattr(job.engine, "run", fake_engine)
+    stdout, stderr = StringIO(), StringIO()
+    assert job.run("202409", "uat", stdout=stdout, stderr=stderr) == 1
+    assert stdout.getvalue() == "1\n"
+    assert stderr.getvalue() == "ECL run reported errors, see log\n"
 
 
 def test_engine_failure_is_nonzero_without_scan_or_success(

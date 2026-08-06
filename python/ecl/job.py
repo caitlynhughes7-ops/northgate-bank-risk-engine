@@ -57,9 +57,9 @@ def _paths(period: str, env: str, rules: dict[str, str]) -> tuple[Path, Path]:
 def count_log_errors(log_path: Path, pattern: str) -> int | None:
     """Count line-start errors, returning None when grep would fail to read."""
     try:
-        with log_path.open() as stream:
+        with log_path.open(errors="replace") as stream:
             return sum(bool(re.match(pattern, line)) for line in stream)
-    except FileNotFoundError:
+    except OSError:
         return None
 
 
