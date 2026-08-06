@@ -36,6 +36,13 @@ legacy behaviour preserved**.
   0.01 acceptance tolerance. CSV output is therefore not guaranteed byte
   identical to the SAS export; parity is defined numerically at 0.01 under
   acceptance criterion 1. The two affected cells are not adjusted.
+* **Parity comparison basis:** the harness compares unrounded engine aggregate
+  values with the captured baseline, which is itself a 2dp SAS export. Thus
+  the measured difference can include up to half a penny of baseline
+  rounding. The 202409 artifact records a worst-case absolute unrounded
+  difference of **0.005000000004656613**, against the strict 0.01 tolerance.
+  The separately reported rendered-CSV check is informational only and does
+  not drive the pass/fail result.
 
 No model parameter was recalibrated. Quantified sensitivity results are
 recorded with the regression run and must accompany the model change record.

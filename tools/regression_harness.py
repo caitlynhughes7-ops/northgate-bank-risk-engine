@@ -1,8 +1,10 @@
 from pathlib import Path
 import json
 import subprocess
-import sys
+from itertools import zip_longest
 import pandas as pd
+
+from ecl.engine import run
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,7 +24,7 @@ def comparison_rows(expected, actual):
             diff = None if missing else float(a - e)
             verdict = None if col == "COVERAGE" else (
                 False if missing else (
-                    e == a if col == "N_EXPOSURES" else abs(diff) <= 0.01 + 1e-9
+                    e == a if col == "N_EXPOSURES" else abs(diff) <= 0.01
                 )
             )
             row[col] = {
@@ -36,13 +38,41 @@ def comparison_rows(expected, actual):
     return rows
 
 def compare(period="202409"):
-    subprocess.run([sys.executable, "-m", "ecl.cli", "--period", period], cwd=ROOT, env={**__import__("os").environ, "PYTHONPATH": str(ROOT / "python")}, check=True)
+    actual, _ = run(period, ROOT)
     expected = pd.read_csv(ROOT / "data/expected" / f"ecl_by_segment_{period}.csv")
-    actual = pd.read_csv(ROOT / "data/output" / f"ecl_by_segment_{period}.csv")
     rows = comparison_rows(expected, actual)
     passed = all(r["present"] and r["N_EXPOSURES"]["within_tolerance"] and r["TOTAL_EAD"]["within_tolerance"] and r["TOTAL_ECL"]["within_tolerance"] for r in rows)
+    rendered_expected = (ROOT / "data/expected" / f"ecl_by_segment_{period}.csv").read_text().splitlines()
+    rendered_actual = (ROOT / "data/output" / f"ecl_by_segment_{period}.csv").read_text().splitlines()
+    textual_differences = [
+        {"line": index, "expected": expected_line, "actual": actual_line}
+        for index, (expected_line, actual_line) in enumerate(
+            zip_longest(rendered_expected, rendered_actual), start=1
+        )
+        if expected_line != actual_line
+    ]
+    compared_diffs = [
+        abs(row[field]["diff"])
+        for row in rows
+        for field in ["TOTAL_EAD", "TOTAL_ECL"]
+        if row[field]["diff"] is not None
+    ]
+    worst_case_abs_diff = max(compared_diffs, default=0.0)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
-    artifact = {"overall_pass": passed, "tolerance": 0.01, "engine_version": "1.0.0", "engine_commit": commit, "rows": rows}
+    artifact = {
+        "overall_pass": passed,
+        "tolerance": 0.01,
+        "comparison_basis": "unrounded engine aggregate values versus 2dp SAS baseline export",
+        "worst_case_abs_diff": worst_case_abs_diff,
+        "engine_version": "1.0.0",
+        "engine_commit": commit,
+        "rendered_csv_check": {
+            "comparison": "informational",
+            "match": not textual_differences,
+            "differences": textual_differences,
+        },
+        "rows": rows,
+    }
     (ROOT / "data/output" / f"parity_{period}.json").write_text(json.dumps(artifact, indent=2, allow_nan=False))
     pd.json_normalize(rows).to_csv(ROOT / "data/output" / f"parity_{period}.csv", index=False)
     return passed

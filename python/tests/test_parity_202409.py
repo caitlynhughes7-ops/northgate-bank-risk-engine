@@ -6,6 +6,11 @@ from tools.regression_harness import comparison_rows, compare
 
 def test_parity_202409():
     assert compare("202409")
+    with open("data/output/parity_202409.json") as artifact:
+        result = json.load(artifact)
+    assert result["comparison_basis"].startswith("unrounded engine")
+    assert result["worst_case_abs_diff"] < 0.01
+    assert result["rendered_csv_check"]["comparison"] == "informational"
 
 
 def test_parity_artifact_is_valid_json_and_one_sided_rows_are_failures():
