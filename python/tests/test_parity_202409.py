@@ -2,7 +2,7 @@ import json
 
 import pandas as pd
 
-from tools.regression_harness import comparison_rows, compare
+from tools.regression_harness import comparison_rows, compare, engine_commit
 
 def test_parity_202409():
     assert compare("202409")
@@ -45,3 +45,11 @@ def test_unmapped_segment_key_is_json_safe():
     rows = comparison_rows(expected, actual)
     assert rows[0]["SEGMENT"] is None
     json.dumps({"rows": rows}, allow_nan=False)
+
+
+def test_engine_commit_metadata_is_optional(monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr("tools.regression_harness.subprocess.run", unavailable)
+    assert engine_commit() is None

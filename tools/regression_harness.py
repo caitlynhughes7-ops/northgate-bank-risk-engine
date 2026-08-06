@@ -9,6 +9,18 @@ from ecl.engine import run
 
 ROOT = Path(__file__).resolve().parents[1]
 
+def engine_commit():
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
 def comparison_rows(expected, actual):
     keys = ["SEGMENT", "STAGE"]
     merged = expected.merge(actual, on=keys, how="outer", suffixes=("_EXPECTED", "_ACTUAL"), indicator=True)
@@ -59,16 +71,7 @@ def compare(period="202409"):
         if row[field]["diff"] is not None
     ]
     worst_case_abs_diff = max(compared_diffs, default=0.0)
-    try:
-        commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = None
+    commit = engine_commit()
     artifact = {
         "overall_pass": passed,
         "tolerance": 0.01,
