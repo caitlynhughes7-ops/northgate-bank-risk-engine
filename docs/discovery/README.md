@@ -24,11 +24,10 @@ and flags the disagreement.
 1. **The engine is much smaller than the repository.** 71 `.sas` files containing 133
    macro definitions are checked in. The month-end batch reaches **20 executed macros in
    19 files**, across **23 reached files**. The remaining **112 macro definitions in 48
-   unreachable files** — the whole
-   `sas/etl/` layer, all 12 portfolio override books, all 20 regulatory report programs,
-   and the orphaned TTC scorecard — are never invoked by any driver. The 113th
-   never-called definition, `%months_between`, is in the reached `m_util_dates.sas` file.
-   See [04](04_never_invoked.md).
+   unreachable files** — the whole `sas/etl/` layer, all 12 portfolio override books, all
+   20 regulatory report programs and the orphaned TTC scorecard — are never invoked by any
+   driver. The 113th never-called definition, `%months_between`, sits in the reached
+   `m_util_dates.sas`. See [04](04_never_invoked.md).
 2. **The regulatory reporting layer in this repository cannot run at all**, even if it
    were invoked: the reports select columns (`REGION`, `BOOK_CD`, `SICR_REASON`,
    `DEFAULT_FL`, `FORBEARANCE_FL`, `ARREARS_BUCKET`, `PD_LIFETIME`) that the dataset

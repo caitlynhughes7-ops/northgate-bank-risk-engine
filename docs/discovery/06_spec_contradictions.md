@@ -61,8 +61,8 @@ select (upcase(SCENARIO));
 UPSIDE 0.15, DOWNSIDE 0.30, SEVERE 0.05 — and no program in the repository reads that file.
 `docs/CHANGELOG.txt` v4.3 is dated 2020-02-14 and says "TEMPORARY — revert after sign-off";
 five years later the code still carries it. The hardcoded set weights the base case 20
-points higher, cuts the downside weight by one third and removes the severe scenario entirely, so the
-provision is lower than the governed weights would produce, and Economics' sign-off of the
+points higher, cuts the downside weight by one third and removes the severe scenario
+entirely, so the provision is lower than the governed weights would produce, and Economics' sign-off of the
 scenario set has no effect on the weighting applied.
 
 This is not the cause of the original KI-023 observation ("PIT scalar appears insensitive
