@@ -58,6 +58,20 @@ def _round_decimal(number: float, decimals: int) -> Decimal:
         return exact.quantize(quantum, rounding=ROUND_HALF_UP)
 
 
+def _significant_digits(candidate: str) -> int:
+    mantissa = candidate.upper().split("E", 1)[0].lstrip("+-").replace(".", "")
+    significant = mantissa.lstrip("0")
+    return len(significant) or 1
+
+
+def _round_scientific(number: float, decimals: int) -> Decimal:
+    exact = Decimal.from_float(number)
+    quantum = Decimal(1).scaleb(exact.adjusted() - decimals)
+    with localcontext() as context:
+        context.prec = max(len(exact.as_tuple().digits), 28) + decimals + 2
+        return exact.quantize(quantum, rounding=ROUND_HALF_UP)
+
+
 def best12(value: float | int | None) -> str:
     """Render a number using the retained-width BEST12. convention."""
     params = _params()
@@ -68,37 +82,43 @@ def best12(value: float | int | None) -> str:
         raw = "."
     else:
         number = float(value)
-        raw = None
+        fixed_candidate = None
         for decimals in range(max_decimals + 1):
             candidate = f"{number:.{decimals}f}"
             if len(candidate) <= width and float(candidate) == number:
-                raw = candidate
+                fixed_candidate = candidate
                 break
-        if raw is None:
+        if fixed_candidate is None:
             for decimals in range(max_decimals, -1, -1):
                 rounded = _round_decimal(number, decimals)
                 candidate = format(rounded, "f")
-                if len(candidate) <= width:
-                    raw = (
+                if len(candidate) <= width and not (number != 0 and float(candidate) == 0):
+                    fixed_candidate = (
                         candidate.rstrip("0").rstrip(".")
                         if "." in candidate
                         else candidate
                     )
                     break
-        if raw is None:
-            for decimals in range(exponent_decimals + 1):
-                rounded = _round_decimal(number, decimals)
-                candidate = format(rounded, f".{decimals}E")
-                if len(candidate) <= width and float(candidate) == number:
-                    raw = candidate
-                    break
-        if raw is None:
+        exponent_candidate = None
+        for decimals in range(exponent_decimals + 1):
+            rounded = _round_scientific(number, decimals)
+            candidate = format(rounded, f".{decimals}E")
+            if len(candidate) <= width and float(candidate) == number:
+                exponent_candidate = candidate
+                break
+        if exponent_candidate is None:
             for decimals in range(exponent_decimals, -1, -1):
-                rounded = _round_decimal(number, decimals)
+                rounded = _round_scientific(number, decimals)
                 candidate = format(rounded, f".{decimals}E")
                 if len(candidate) <= width:
-                    raw = candidate
+                    exponent_candidate = candidate
                     break
+        candidates = [
+            candidate
+            for candidate in (fixed_candidate, exponent_candidate)
+            if candidate is not None
+        ]
+        raw = max(candidates, key=_significant_digits) if candidates else None
     return raw.rjust(width)
 
 

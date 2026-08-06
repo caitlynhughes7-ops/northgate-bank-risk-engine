@@ -134,6 +134,12 @@ def test_best12_compacts_rounded_trailing_zeros():
     assert best12(20000000000.5) == " 20000000001"
 
 
+def test_best12_uses_exponent_for_small_magnitudes():
+    # BEST12. switches to E notation when fixed point loses significant digits.
+    assert best12(1e-15) == "       1E-15"
+    assert best12(1.23e-10) == "    1.23E-10"
+
+
 def test_engine_publishes_before_controls(tmp_path, capsys):
     # EO-05: controls run after disclosure and GL publication, not before it.
     shutil.copytree(ROOT / "data/input", tmp_path / "data/input")
