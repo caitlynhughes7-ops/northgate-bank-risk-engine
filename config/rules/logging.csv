@@ -1,4 +1,6 @@
 PARAM,VALUE
 log_note_prefix,NOTE:
+log_error_prefix,ERROR:
 log_tag,[ECL]
 log_timestamp_format,datetime20
+assert_rows_default_minrows,1

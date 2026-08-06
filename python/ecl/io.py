@@ -1,10 +1,11 @@
 from pathlib import Path
 import pandas as pd
-from .util_logging import log_step
+from .util_logging import assert_rows, configured_minrows, log_step
 
 def load_period(root: Path, period: str):
     log_step("load_loan_tape", msg=f"period {period}")
     tape = pd.read_csv(root / "data/input" / f"loan_tape_{period}.csv", dtype={"ACCOUNT_ID": "string", "DPD": "string"})
+    assert_rows(tape, "stg.loan_tape", configured_minrows("stg.loan_tape"))
     collateral = pd.read_csv(root / "data/input" / f"collateral_{period}.csv", dtype={"ACCOUNT_ID": "string"})
     scenarios = pd.read_csv(root / "data/input/macro_scenarios.csv")
     return tape, collateral, scenarios

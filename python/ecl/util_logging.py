@@ -2,14 +2,28 @@ import sys
 from collections.abc import Callable
 from datetime import datetime
 
+import pandas as pd
+
 from .config import table
 
 _MONTHS = ("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
 
 
+class EclAbort(Exception):
+    """Raised when a legacy ECL assertion cancels the run."""
+
+
 def _logging_params() -> dict[str, str]:
     values = table("logging.csv")
     return dict(zip(values.PARAM, values.VALUE))
+
+
+def configured_minrows(name: str) -> int:
+    values = table("row_count_assertions.csv")
+    matches = values.loc[values["DATASET"] == name, "MINROWS"]
+    if matches.empty:
+        raise KeyError(f"no row-count assertion configured for {name}")
+    return int(matches.iloc[0])
 
 
 def format_datetime20(dt: datetime) -> str:
@@ -29,6 +43,28 @@ def format_log_line(prefix: str, tag: str, body: str) -> str:
 
 def emit_log_line(line: str, emit: Callable[[str], None] | None = None) -> None:
     (emit or _write_line)(line)
+
+
+def assert_rows(
+    frame: pd.DataFrame,
+    name: str,
+    minrows: int | None = None,
+    *,
+    emit: Callable[[str], None] | None = None,
+) -> None:
+    params = _logging_params()
+    threshold = int(params["assert_rows_default_minrows"]) if minrows is None else minrows
+    n = len(frame.index)
+    if n < threshold:
+        line = format_log_line(
+            params["log_error_prefix"],
+            params["log_tag"],
+            f"{name} has {n} rows, expected at least {threshold}",
+        )
+        emit_log_line(line, emit)
+        raise EclAbort(line)
+    line = format_log_line(params["log_note_prefix"], params["log_tag"], f"{name} row count {n}")
+    emit_log_line(line, emit)
 
 
 def log_step(
