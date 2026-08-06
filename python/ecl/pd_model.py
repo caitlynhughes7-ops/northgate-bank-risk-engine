@@ -28,7 +28,8 @@ def term_structure(d: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     curves = []
     for row in d.itertuples(index=False):
         h = 1 - (1 - row.PD_12M) ** (1 / 12)
-        term = max(1, min(row.REMAIN_TERM_M, cap))
+        remaining_term = cap if pd.isna(row.REMAIN_TERM_M) else row.REMAIN_TERM_M
+        term = max(1, min(remaining_term, cap))
         prev = 0.0
         for t in range(1, int(term) + 1):
             cum = 1 - (1 - h) ** t
