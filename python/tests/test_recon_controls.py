@@ -143,6 +143,8 @@ def test_best12_uses_exponent_for_small_magnitudes():
     # BEST12. switches to E notation when fixed point loses significant digits.
     assert best12(1e-15) == "       1E-15"
     assert best12(1.23e-10) == "    1.23E-10"
+    assert best12(5e-11) == "       5E-11"
+    assert best12(9e-11) == "       9E-11"
 
 
 def test_engine_publishes_before_controls(tmp_path, capsys):

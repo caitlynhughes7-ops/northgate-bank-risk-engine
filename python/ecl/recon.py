@@ -116,7 +116,17 @@ def best12(value: float | int | None) -> str:
             for candidate in (fixed_candidate, exponent_candidate)
             if candidate is not None
         ]
-        raw = max(candidates, key=_significant_digits) if candidates else None
+        raw = (
+            max(
+                candidates,
+                key=lambda candidate: (
+                    _significant_digits(candidate),
+                    float(candidate) == number,
+                ),
+            )
+            if candidates
+            else None
+        )
     return raw.rjust(width)
 
 
