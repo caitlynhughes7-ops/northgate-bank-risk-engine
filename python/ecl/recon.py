@@ -152,7 +152,7 @@ def recon_controls(
     if null_stage_count > int(params["null_stage_error_threshold"]):
         error_prefix = logging_params["log_error_prefix"]
         emit_log_line(
-            f"{error_prefix} {logging_params['log_tag']} {best12(null_stage_count)} exposures with null stage",
+            f"{error_prefix} {logging_params['log_tag']} {formatter(null_stage_count)} exposures with null stage",
             emit,
         )
     return ReconControlsResult(
