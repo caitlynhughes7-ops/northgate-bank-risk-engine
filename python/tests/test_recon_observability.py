@@ -46,15 +46,47 @@ def test_observability_missing_and_zero_totals_are_non_failing():
     assert control["env_tolerance_breach"] is None
 
 
-def test_observability_artifact_is_strict_json_and_no_official_paths(tmp_path, monkeypatch):
-    # Observability is separate from official disclosure and GL output paths.
-    tape, account = _frames()
+def test_observability_threshold_comes_from_config(monkeypatch):
+    # Control 2 uses the configured threshold rather than a model-code literal.
+    tape, account = _frames(stage=(None, 1))
+    monkeypatch.setattr(
+        "ecl.recon_observability._rules",
+        lambda: {
+            "default_env": "uat",
+            "spec_section_8_tolerance": "0.0001",
+            "null_stage_error_threshold": "1",
+        },
+    )
     artifact = recon_observability(tape, account, emit=lambda _: None)
-    path = tmp_path / "recon_observability.json"
-    path.write_text(json.dumps(artifact, allow_nan=False))
-    assert json.loads(path.read_text())["control_3"]["status"] == "not_evaluable"
-    assert not (tmp_path / "ecl_by_segment_202409.csv").exists()
-    assert not (tmp_path / "ECL_GL_FEED_202409.txt").exists()
+    assert artifact["control_2"]["breach"] is False
+
+
+def test_observability_artifact_is_strict_json_and_no_official_paths(tmp_path):
+    # The tool writes only observability output under the supplied temporary root.
+    import shutil
+
+    shutil.copytree(Path(__file__).resolve().parents[2] / "data/input", tmp_path / "data/input")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2] / "python")
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "tools/recon_observability.py",
+            "--period",
+            "202409",
+            "--root",
+            str(tmp_path),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0
+    artifact_path = tmp_path / "data/output/observability/recon_observability_202409.json"
+    artifact = json.loads(artifact_path.read_text())
+    assert artifact["control_3"]["status"] == "not_evaluable"
+    assert not list(tmp_path.rglob("ecl_by_segment_202409.csv"))
+    assert not list(tmp_path.rglob("ECL_GL_FEED_202409.txt"))
 
 
 def test_observability_tool_returns_zero_on_breach():
@@ -68,3 +100,27 @@ def test_observability_tool_returns_zero_on_breach():
         text=True,
     )
     assert completed.returncode == 0
+
+
+def test_degraded_observability_artifact_identifies_exception(tmp_path):
+    # Input failures remain non-fatal but identify their exception type.
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2] / "python")
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "tools/recon_observability.py",
+            "--period",
+            "202409",
+            "--root",
+            str(tmp_path),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0
+    artifact = json.loads(
+        (tmp_path / "data/output/observability/recon_observability_202409.json").read_text()
+    )
+    assert artifact["exception_type"] == "FileNotFoundError"

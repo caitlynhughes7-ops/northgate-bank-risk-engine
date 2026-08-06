@@ -17,16 +17,18 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--period", default="202409")
     parser.add_argument("--env", default=None)
+    parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()
-    output = ROOT / "data/output/observability" / f"recon_observability_{args.period}.json"
+    output = args.root / "data/output/observability" / f"recon_observability_{args.period}.json"
     try:
-        tape, _, _ = load_period(ROOT, args.period)
+        tape, _, _ = load_period(args.root, args.period)
         arrears = derive_arrears(map_products(clean(tape)))
-        _, account = run(args.period, ROOT, write=False)
+        _, account = run(args.period, args.root, write=False)
         artifact = recon_observability(arrears, account, env=args.env)
     except Exception as exc:
         artifact = {
             "status": "not_evaluable",
+            "exception_type": type(exc).__name__,
             "reason": str(exc),
             "control_1": None,
             "control_2": None,

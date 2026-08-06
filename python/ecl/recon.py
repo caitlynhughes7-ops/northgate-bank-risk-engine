@@ -33,14 +33,14 @@ def env_recon_tolerance(env: str) -> float:
     return float(match.group(1).strip())
 
 
-def _sas_sum(frame: pd.DataFrame, column: str) -> float | None:
+def sas_sum(frame: pd.DataFrame, column: str) -> float | None:
     values = frame[column].dropna()
     if values.empty:
         return None
     return float(values.sum())
 
 
-def _numeric_missing(value: object) -> bool:
+def numeric_missing(value: object) -> bool:
     return not isinstance(value, str) and bool(pd.isna(value))
 
 
@@ -130,10 +130,10 @@ def recon_controls(
     params = _params()
     log_step("recon_controls", now=now, emit=emit)
 
-    drawn = _sas_sum(tape, "DRAWN_BAL")
-    ead = _sas_sum(ecl_acct, "EAD")
-    ecl = _sas_sum(ecl_acct, "ECL")
-    null_stage_count = sum(_numeric_missing(value) for value in ecl_acct["STAGE"])
+    drawn = sas_sum(tape, "DRAWN_BAL")
+    ead = sas_sum(ecl_acct, "EAD")
+    ecl = sas_sum(ecl_acct, "ECL")
+    null_stage_count = sum(numeric_missing(value) for value in ecl_acct["STAGE"])
     logging_params = dict(zip(table("logging.csv").PARAM, table("logging.csv").VALUE))
     formatter = {"best12": best12}[params["control_value_format"]]
     emit_log_line(

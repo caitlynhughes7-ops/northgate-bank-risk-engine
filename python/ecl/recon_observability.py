@@ -5,10 +5,10 @@ import pandas as pd
 
 from .config import table
 from .recon import (
-    _numeric_missing,
-    _sas_sum,
     best12,
     env_recon_tolerance,
+    numeric_missing,
+    sas_sum,
 )
 from .util_logging import emit_log_line, log_step
 
@@ -47,15 +47,15 @@ def recon_observability(
     rules = _rules()
     logging = _logging()
     selected_env = env or rules["default_env"]
-    drawn = _sas_sum(tape, "DRAWN_BAL")
-    ead = _sas_sum(ecl_acct, "EAD")
+    drawn = sas_sum(tape, "DRAWN_BAL")
+    ead = sas_sum(ecl_acct, "EAD")
     absolute_difference = None if drawn is None or ead is None else abs(drawn - ead)
     relative_difference = (
         None if absolute_difference is None or drawn == 0 else absolute_difference / abs(drawn)
     )
     env_tolerance = _safe_tolerance(selected_env)
     spec_tolerance = float(rules["spec_section_8_tolerance"])
-    null_stage_count = sum(_numeric_missing(value) for value in ecl_acct["STAGE"])
+    null_stage_count = sum(numeric_missing(value) for value in ecl_acct["STAGE"])
     control_1 = {
         "sum_drawn_bal": drawn,
         "sum_ead": ead,
@@ -69,7 +69,7 @@ def recon_observability(
     }
     control_2 = {
         "null_stage_count": null_stage_count,
-        "breach": bool(null_stage_count),
+        "breach": null_stage_count > int(rules["null_stage_error_threshold"]),
     }
     control_3 = {
         "status": "not_evaluable",
