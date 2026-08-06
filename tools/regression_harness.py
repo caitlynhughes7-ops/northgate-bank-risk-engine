@@ -59,7 +59,16 @@ def compare(period="202409"):
         if row[field]["diff"] is not None
     ]
     worst_case_abs_diff = max(compared_diffs, default=0.0)
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        commit = None
     artifact = {
         "overall_pass": passed,
         "tolerance": 0.01,
