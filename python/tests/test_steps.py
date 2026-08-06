@@ -1,7 +1,9 @@
 import pandas as pd
+from ecl.config import params, table
 from ecl.arrears import derive_arrears
 from ecl.clean import clean
 from ecl.discount import discount
+from ecl.io import write_outputs
 from ecl.lgd import secured
 from ecl.staging import stage
 
@@ -23,6 +25,58 @@ def test_secured_missing_fallbacks_and_unmatched_floor():
     c = pd.DataFrame(columns=["ACCOUNT_ID", "VALUATION", "HPI_INDEX_ORIG", "HPI_INDEX_CURR"])
     x = secured(d, c)
     assert x.LGD_RAW.iloc[0] == 1 and x.LGD.iloc[0] == 1
+
+
+def test_btl_ki021_config_mismatch_keeps_haircut_zero():
+    # KI-021: hierarchy code 2110 has no match for legacy haircut code 110.
+    d = pd.DataFrame(
+        {
+            "ACCOUNT_ID": ["a"],
+            "SECURED_FLAG": ["Y"],
+            "EAD": [100.0],
+            "PROD_CD": [2110],
+            "SEGMENT": ["BTL_MORTGAGE"],
+        }
+    )
+    c = pd.DataFrame(
+        {
+            "ACCOUNT_ID": ["a"],
+            "VALUATION": [100.0],
+            "HPI_INDEX_ORIG": [100.0],
+            "HPI_INDEX_CURR": [100.0],
+        }
+    )
+    assert secured(d, c).HAIRCUT.iloc[0] == 0
+
+
+def test_active_scenario_weights_are_frozen_v43():
+    assert params()["active_scenario_weights"] == "frozen_v43"
+    weights = table("scenario_weights_frozen_v43.csv")
+    assert dict(zip(weights.SCENARIO, weights.WEIGHT)) == {
+        "BASE": 0.70,
+        "UPSIDE": 0.10,
+        "DOWNSIDE": 0.20,
+        "SEVERE": 0.00,
+    }
+
+
+def test_gl_feed_record_layout(tmp_path):
+    out = pd.DataFrame(
+        {
+            "SEGMENT": ["SEGMENT_NAME"],
+            "STAGE": [2],
+            "N_EXPOSURES": [1],
+            "TOTAL_EAD": [100.0],
+            "TOTAL_ECL": [12.3],
+            "COVERAGE": [0.123],
+        }
+    )
+    write_outputs(out, tmp_path, "202409")
+    line = (tmp_path / "data/output/ECL_GL_FEED_202409.txt").read_text().rstrip("\n")
+    assert len(line) == 39
+    assert line[:20] == "SEGMENT_NAME".ljust(20)
+    assert line[20] == "2"
+    assert line[21:] == f"{12.3:18.2f}"
 
 def test_staging_precedence():
     d = pd.DataFrame({"SEGMENT": ["PERSONAL_LOAN"], "DEFAULT_FL": [True], "DPD_N": [0], "FORBEARANCE_FL": [False], "WATCHLIST_FL": [True], "PD_LIFETIME": [0.5], "PD_LIFETIME_ORIG": [0.01]})

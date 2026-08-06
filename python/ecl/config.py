@@ -10,7 +10,3 @@ def table(name: str) -> pd.DataFrame:
 def params() -> dict[str, str]:
     d = table("model_params.csv")
     return dict(zip(d.PARAM, d.VALUE))
-
-def lookup(frame: pd.DataFrame, key: str, value: str, default: str = "__DEFAULT__") -> pd.Series:
-    values = dict(zip(frame[key].astype(str), frame[value]))
-    return frame[key].astype(str).map(values).fillna(values[default])

@@ -9,8 +9,15 @@ def load_period(root: Path, period: str):
 
 def write_outputs(out: pd.DataFrame, root: Path, period: str):
     path = root / "data/output"
-    path.mkdir(exist_ok=True)
-    out.to_csv(path / f"ecl_by_segment_{period}.csv", index=False, float_format="%.2f")
+    path.mkdir(parents=True, exist_ok=True)
+    export = out.copy()
+    export["N_EXPOSURES"] = export["N_EXPOSURES"].astype(int).astype(str)
+    for column in ["TOTAL_EAD", "TOTAL_ECL"]:
+        export[column] = export[column].map(lambda value: f"{value:.2f}")
+    export["COVERAGE"] = export["COVERAGE"].map(
+        lambda value: f"{value:.6f}".rstrip("0").rstrip(".")
+    )
+    export.to_csv(path / f"ecl_by_segment_{period}.csv", index=False)
     with (path / f"ECL_GL_FEED_{period}.txt").open("w") as f:
         for r in out.itertuples(index=False):
             segment = str(r.SEGMENT)[:20].ljust(20)
