@@ -12,6 +12,9 @@ account-level fields produced by the steps below.
 | TOTAL_EAD | `DRAWN_BAL`, `UNDRAWN`, segment CCF | `ead.py` / `m_ead_ccf.sas` | s.5 |
 | TOTAL_ECL | PIT PD, constant-hazard curve, LGD, EIR discounting, overlay | `pd_model.py`, `lgd.py`, `discount.py`, `ecl.py` / corresponding SAS macros | s.2–s.7 |
 | COVERAGE | `TOTAL_ECL / TOTAL_EAD` | `aggregate.py` / `m_aggregate_reporting.sas` | s.8 |
+| SEGMENT (board pack) | `SEGMENT` from `out.ecl_by_segment` | `board_pack.py` / inline `proc sql` in `sas/driver/run_month_end.sas` | no specification basis |
+| EAD (board pack) | Sum of `TOTAL_EAD` by `SEGMENT` from `out.ecl_by_segment` | `board_pack.py` / inline `proc sql` in `sas/driver/run_month_end.sas` | no specification basis |
+| ECL (board pack) | Sum of `TOTAL_ECL` by `SEGMENT` from `out.ecl_by_segment` | `board_pack.py` / inline `proc sql` in `sas/driver/run_month_end.sas` | no specification basis |
 
 Detailed source-to-field chain: loan tape and collateral are loaded by
 `io.py` (`m_load_loan_tape.sas`), cleaned in `clean.py`, mapped and bucketed in
@@ -23,3 +26,7 @@ explicitly retained for parity: the v4.3 frozen scenario weights, the BTL
 haircut code mismatch, the KI-041 personal-loan discount formula, and the
 specific uplift, overlay, CCF and PD masterscale values embedded in later SAS
 macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
+
+The legacy board pack is persisted as a SAS dataset only. The migration
+additionally writes `board_pack_<period>.csv` as an operational persistence
+choice; this CSV is not a legacy output contract.

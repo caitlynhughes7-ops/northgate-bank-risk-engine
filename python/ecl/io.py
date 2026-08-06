@@ -25,3 +25,14 @@ def write_outputs(out: pd.DataFrame, root: Path, period: str):
             segment = "" if pd.isna(r.SEGMENT) else str(r.SEGMENT)[:20]
             segment = segment.ljust(20)
             f.write(f"{segment}{int(r.STAGE):01d}{r.TOTAL_ECL:18.2f}\n")
+
+
+def write_board_pack(board: pd.DataFrame, root: Path, period: str):
+    path = root / "data/output"
+    path.mkdir(parents=True, exist_ok=True)
+    export = board.copy()
+    for column in ["EAD", "ECL"]:
+        export[column] = export[column].map(
+            lambda value: "" if pd.isna(value) else f"{value:.2f}".rstrip("0").rstrip(".")
+        )
+    export.to_csv(path / f"board_pack_{period}.csv", index=False)

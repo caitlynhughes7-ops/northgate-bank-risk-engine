@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-from .io import load_period, write_outputs
+from .io import load_period, write_board_pack, write_outputs
 from .clean import clean
 from .product import map_products
 from .arrears import derive_arrears
@@ -12,6 +12,7 @@ from .overlay import apply_overlay
 from .discount import discount
 from .ecl import calculate
 from .aggregate import aggregate
+from .board_pack import board_pack
 
 def run(
     period: str,
@@ -33,3 +34,24 @@ def run(
     if write:
         write_outputs(out, root, period)
     return out, result
+
+
+def run_month_end(
+    period: str,
+    root: Path | None = None,
+    weight_file: str | None = None,
+    haircut_overrides: dict[int, float] | None = None,
+    write: bool = True,
+):
+    root = root or Path(__file__).resolve().parents[2]
+    aggregate_out, result = run(
+        period,
+        root=root,
+        weight_file=weight_file,
+        haircut_overrides=haircut_overrides,
+        write=write,
+    )
+    board = board_pack(aggregate_out)
+    if write:
+        write_board_pack(board, root, period)
+    return board, result
