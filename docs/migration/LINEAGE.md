@@ -30,6 +30,7 @@ macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
 |---|---|---|---|
 | SEGMENT display label | Segment code rendered by the `$seg.` format in `sas/formats/fmt_product.sas` | `formats.segment_label` / `formats.segment_labels`, backed by `config/rules/fmt_seg.csv` | No basis in `docs/ECL_Model_Spec_v3_2016.md`; display-only and outside the calculation path |
 | STAGE display label | Numeric stage rendered by the `stage.` format in `sas/formats/fmt_product.sas` | `formats.stage_label` / `formats.stage_labels`, backed by `config/rules/fmt_stage.csv` | No basis in `docs/ECL_Model_Spec_v3_2016.md`; display-only and outside the calculation path |
+| Rating masterscale display label | Numeric rating rendered by the `grade.` format in `sas/formats/fmt_ratings.sas` | `formats.grade_label` / `formats.grade_labels`, backed by `config/rules/fmt_grade.csv` | No basis in `docs/ECL_Model_Spec_v3_2016.md`; display-only and outside the calculation path |
 
 These formats are defined in the legacy autoexec but are not applied by any
 reachable batch program. The Python unit preserves their display behaviour

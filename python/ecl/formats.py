@@ -20,6 +20,12 @@ _STAGE_FORMAT = dict(
         table("fmt_stage.csv")["LABEL"],
     )
 )
+_GRADE_FORMAT = dict(
+    zip(
+        pd.to_numeric(table("fmt_grade.csv")["RATING_GRADE"]),
+        table("fmt_grade.csv")["LABEL"],
+    )
+)
 
 
 def segment_label(code: object) -> str:
@@ -36,7 +42,7 @@ def segment_labels(codes: pd.Series) -> pd.Series:
     return codes.map(segment_label).astype("object")
 
 
-def _numeric_stage(value: object) -> float | None:
+def _numeric_value(value: object) -> float | None:
     if value is None or isinstance(value, bool):
         return None
     if isinstance(value, Real):
@@ -59,7 +65,7 @@ def _render_numeric(value: float) -> str:
 
 def stage_label(value: object) -> str:
     """Render a stage value using the legacy ``stage.`` format."""
-    numeric = _numeric_stage(value)
+    numeric = _numeric_value(value)
     if numeric is None:
         return "."
     if numeric in _STAGE_FORMAT:
@@ -70,3 +76,18 @@ def stage_label(value: object) -> str:
 def stage_labels(values: pd.Series) -> pd.Series:
     """Render a Series of stages without mutating the input."""
     return values.map(stage_label).astype("object")
+
+
+def grade_label(value: object) -> str:
+    """Render a rating grade using the legacy ``grade.`` format."""
+    numeric = _numeric_value(value)
+    if numeric is None:
+        return "."
+    if numeric in _GRADE_FORMAT:
+        return _GRADE_FORMAT[numeric]
+    return _render_numeric(numeric)
+
+
+def grade_labels(values: pd.Series) -> pd.Series:
+    """Render a Series of rating grades without mutating the input."""
+    return values.map(grade_label).astype("object")
