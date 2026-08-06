@@ -46,3 +46,26 @@ legacy behaviour preserved**.
 
 No model parameter was recalibrated. Quantified sensitivity results are
 recorded with the regression run and must accompany the model change record.
+
+## Product display formats (`sas/formats/fmt_product.sas`)
+
+These are display-only behaviours, not calculation inputs. No numeric impact
+can be quantified because no captured legacy output applies these formats and
+the formats are not used in the reachable batch. All behaviours below are
+preserved as-is, none are fixed, and all are raised for Model Governance
+decision.
+
+* **Defined but unapplied:** `sas/autoexec.sas` includes the format source, but
+  no reachable batch program applies `$seg.` or `stage.`. Consequently, the
+  Python display unit has no current calculation-path effect and no numeric
+  parity claim can be made.
+* **Silent segment fallback:** `$seg.` uses `other = 'Unclassified'`. An
+  unmapped or typo'd segment code therefore renders as `Unclassified` instead
+  of raising an error; a mapping break is invisible on the face of a report.
+* **Case-sensitive segment mapping:** `$seg.` compares case-sensitively,
+  unlike other flag comparisons in the engine. A lowercase feed therefore
+  silently renders every row `Unclassified`, rather than matching the
+  uppercase code.
+* **Unlabelled out-of-range stage:** `stage.` has no `other` clause. An
+  out-of-range stage consequently renders as a bare number in an otherwise
+  labelled column, rather than receiving a catch-all label.

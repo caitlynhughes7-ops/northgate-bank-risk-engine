@@ -1,0 +1,8 @@
+SEGMENT,LABEL
+RETAIL_MORTGAGE,Retail mortgages
+BTL_MORTGAGE,Buy to let
+PERSONAL_LOAN,Personal loans
+CREDIT_CARD,Credit cards
+OVERDRAFT,Overdrafts
+SME_TERM,SME lending
+other,Unclassified
