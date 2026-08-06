@@ -4,6 +4,7 @@ import subprocess
 from itertools import zip_longest
 import pandas as pd
 
+from ecl import __version__
 from ecl.engine import run
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +65,7 @@ def compare(period="202409"):
         "tolerance": 0.01,
         "comparison_basis": "unrounded engine aggregate values versus 2dp SAS baseline export",
         "worst_case_abs_diff": worst_case_abs_diff,
-        "engine_version": "1.0.0",
+        "engine_version": __version__,
         "engine_commit": commit,
         "rendered_csv_check": {
             "comparison": "informational",
