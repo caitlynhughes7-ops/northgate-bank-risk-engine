@@ -22,8 +22,9 @@ and flags the disagreement.
 ## Headline conclusions
 
 1. **The engine is much smaller than the repository.** 71 `.sas` files containing 133
-   macro definitions are checked in. The month-end batch reaches **20 macros in 19
-   files**. The remaining **112 macro definitions in 48 unreachable files** — the whole
+   macro definitions are checked in. The month-end batch reaches **20 executed macros in
+   19 files**, across **23 reached files**. The remaining **112 macro definitions in 48
+   unreachable files** — the whole
    `sas/etl/` layer, all 12 portfolio override books, all 20 regulatory report programs,
    and the orphaned TTC scorecard — are never invoked by any driver. The 113th
    never-called definition, `%months_between`, is in the reached `m_util_dates.sas` file.
