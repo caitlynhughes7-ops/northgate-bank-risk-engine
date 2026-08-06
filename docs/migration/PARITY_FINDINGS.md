@@ -148,7 +148,8 @@ only through its existing bootstrap and engine surfaces.
 `out.board_pack` Pillar 3 extract, but that step belongs to the separate
 board-pack migration unit and is intentionally out of scope here. Control-M
 must not be cut over to this entry point until the migrated board-pack step has
-landed and this orchestration invokes it.
+landed and this orchestration invokes it, and until the selected environment's
+library paths actually drive the engine's I/O.
 
 * **Controls run after publication (EO-05):** Cause: the legacy driver
   publishes disclosure and GL outputs before its controls, as described by
@@ -199,6 +200,16 @@ landed and this orchestration invokes it.
   producing the Pillar 3 board pack while still exiting 0. Decision required:
   the job must invoke the migrated board-pack step once that unit lands, and
   this PR must not be cut over to Control-M before then.
+* **Environment library paths are not yet wired into engine I/O:** Cause:
+  `bootstrap(sysparm, ROOT)` is used as a context manager, while
+  `engine.run(period, root=ROOT)` reads `data/input` and writes `data/output`
+  under the repository root; the environment's `INBOUND`, `OUTBOUND`,
+  `HISTLIB`, `RECON_TOL`, and `MAX_TERM_M` values therefore never reach the
+  engine. Consequence: a `prod` request runs against the repo-relative sample
+  locations rather than the production inbound/outbound directories, while
+  still exiting 0. Decision required: wire the environment library paths into
+  engine I/O in the ECL-chain and environment-config units before cutover;
+  this orchestration unit must not implement that cross-unit change.
 * **Unvalidated path traversal is preserved:** Cause: legacy lines 6–7 do no
   period or environment validation, and line 21 interpolates both values into
   `../logs/ecl_${PERIOD}_${ENVN}.log`; the migration preserves that contract.
