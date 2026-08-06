@@ -17,7 +17,7 @@ Quantified impacts on the 202409 sample period are in [07_evidence.md](07_eviden
 | SF-06 | `%staging_sicr`, threshold join on `SEGMENT` | Segment not in `sicr_thresholds.csv` | Hardcoded fallback thresholds (2.0 / 0.01 / 30) applied silently |
 | SF-07 | `%staging_sicr`, `PD_LIFETIME_ORIG` from the tape | Field missing or blank on the tape | Exposure stays Stage 1 regardless of PD deterioration |
 | SF-08 | `%ecl_calc`, `stg.ecl_raw` left join | Exposure has no curve rows | `coalesce(r.ECL_UNADJ, 0)` → ECL of zero for that exposure |
-| SF-09 | `%ecl_calc`, inner join of curve to exposure | Exposure missing from either side | Exposure disappears from the ECL population entirely |
+| SF-09 | `%ecl_calc`, inner join of curve to exposure | Exposure has no curve rows, or curve rows exist for an exposure absent from `stg.exposure` | Curve rows dropped silently; the exposure is still reported, measured at `ECL = 0` (see SF-08) |
 | SF-10 | `%pd_pit`, `RATING_GRADE` | Grade outside 1–15, or missing | `otherwise PD_GRADE = 0.0410`, i.e. silently graded 10 (`B`) |
 | SF-11 | `%clean_loan_tape`, DPD sentinels | DPD is `999` or non-numeric | `DPD_N = 0`; a 999-day-past-due account is treated as up to date |
 | SF-12 | `%pd_pit`, scenario names | Scenario label not `BASE`/`UPSIDE`/`DOWNSIDE`/`SEVERE` | `WEIGHT = 0`, scenario silently excluded from the macro scalar |
@@ -39,16 +39,22 @@ defaults." There is no default: the fallback is the most conservative possible L
 run does complete, silently, and the provision is materially overstated rather than
 understated.
 
-The join is also fragile in a way that matters for the migration. The tape side is
-normalised (`ACCOUNT_ID = left(compress(ACCOUNT_ID))` in `%load_loan_tape`, because "the
-source system pads account ids to 12 chars in some months and not others"); the collateral
-side is **not normalised at all**. In the 202409 sample, 213 of 2000 tape IDs are padded to
-12 characters and the collateral file is uniformly 11 characters, so the join depends
-entirely on that one `compress` call. A migration that reads the tape without replicating
-it loses the collateral for every padded account, and those accounts then get LGD 1.00 —
-a large, silent overstatement. No count, no `WARNING`, no `%assert_rows` protects this
-join, and there is no check anywhere that the number of secured exposures equals the number
-of collateral rows.
+Live triggers in SAS are a short, late or stale collateral extract, or a key that differs by
+something SAS does not ignore — case, leading whitespace, or a reformatted account number.
+Trailing padding is *not* one of them: `%load_loan_tape` normalises the tape side with
+`ACCOUNT_ID = left(compress(ACCOUNT_ID))` (because "the source system pads account ids to 12
+chars in some months and not others") and the collateral side is not normalised at all, but
+SAS blank-pads the shorter operand in a character comparison, so `'NB010000070 '` matches
+`'NB010000070'` with or without the `compress`. In the 202409 sample all 213 padded tape IDs
+carry exactly one trailing space and no leading whitespace, so that call is a no-op for this
+join as the engine runs today.
+
+It is not a no-op for the target implementation, and this is the trap. In Python trailing
+blanks are significant, so a port that reads the tape without reproducing the strip loses
+the collateral for 119 secured exposures and measures them at LGD 1.00 — £6.5m of spurious
+provision on this period, with nothing to catch it ([07](07_evidence.md) SF-01). No count,
+no `WARNING` and no `%assert_rows` protects this join in either implementation, and nothing
+anywhere checks that the number of secured exposures equals the number of collateral rows.
 
 ### SF-02 — the haircut join misses for the whole buy-to-let book (root cause of KI-021)
 
@@ -187,14 +193,16 @@ create table &outds as select ... coalesce(r.ECL_UNADJ,0) ...
   from &expds as e left join stg.ecl_raw as r on e.ACCOUNT_ID = r.ACCOUNT_ID;  /* SF-08 */
 ```
 
-- SF-09: the `inner join` silently drops any exposure that has no curve rows, or any curve
-  row for an exposure that did not survive the LGD stacking. Nothing compares the row
-  count of `stg.exposure` with the number of distinct accounts in `stg.curve_j`.
-- SF-08: the final left join then measures those same exposures at `ECL = 0` (Stage 1 and 2)
-  because `coalesce(r.ECL_UNADJ, 0)` converts "no curve" into "no expected loss". They
-  still appear in the output with their full `EAD`, so the segment coverage ratio is
-  diluted rather than the exposure disappearing — which is harder to spot than an outright
-  drop. Stage 3 exposures are unaffected because their ECL does not use the curve.
+- SF-09: the `inner join` silently drops curve rows for any account that is not in
+  `stg.exposure`, and produces nothing for an exposure that has no curve rows. Nothing
+  compares the row count of `stg.exposure` with the number of distinct accounts in
+  `stg.curve_j`.
+- SF-08: because `&outds` is built from `&expds` with a **left** join to `stg.ecl_raw`, the
+  exposure does not disappear — `coalesce(r.ECL_UNADJ, 0)` converts "no curve" into "no
+  expected loss". It is reported with its full `EAD` and `ECL = 0` (Stage 1 and 2), so the
+  segment coverage ratio is diluted rather than the row vanishing, which is harder to spot
+  than an outright drop. Stage 3 exposures are unaffected because their ECL does not use the
+  curve.
 
 An exposure can therefore be reported with a multi-million-pound EAD and a zero provision,
 and the only evidence would be a coverage ratio that looks slightly low.

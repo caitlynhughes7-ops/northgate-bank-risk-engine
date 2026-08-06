@@ -172,16 +172,19 @@ Small in absolute terms, and it overstates rather than understates, which is pre
 "consistent with prior periods" was accepted in 2022. It still needs a documented decision,
 because it is a knowing departure from the approved methodology on an audited number.
 
-## SF-01 — the ID normalisation the collateral join silently depends on
+## SF-01 — the ID normalisation that SAS makes redundant and Python does not
 
-213 of the 2,000 tape account IDs are padded to 12 characters; 119 of those are secured
-exposures. The collateral file is uniformly 11 characters and is **not** normalised on its
-side of the join. The single `ACCOUNT_ID = left(compress(ACCOUNT_ID))` in `%load_loan_tape`
-is what makes the join work.
+213 of the 2,000 tape account IDs carry a trailing space; 119 of those are secured
+exposures. The collateral file is uniformly unpadded and is **not** normalised on its side
+of the join. In SAS this does not matter — character comparisons blank-pad the shorter
+operand, so the join matches whether or not `%load_loan_tape` applied
+`ACCOUNT_ID = left(compress(ACCOUNT_ID))`. That call is a no-op for this join today, which
+is precisely why it is dangerous to port: nothing in the legacy behaviour signals that it
+matters, and in Python trailing blanks are significant.
 
-If a migration drops that normalisation — the most natural mistake to make when porting a
-data step whose only comment is "the source system pads account ids to 12 chars in some
-months and not others" — the effect is:
+If a port drops the strip — the natural thing to do with a data step whose only comment is
+"the source system pads account ids to 12 chars in some months and not others", and whose
+removal breaks nothing in SAS — the effect is:
 
 | Segment | Exposures losing collateral | EAD | LGD applied | ECL impact |
 |---|---:|---:|---:|---:|
@@ -191,7 +194,8 @@ months and not others" — the effect is:
 | **Total** | **119** | **£42,090,575.71** | **1.00** | **+£6,476,689.07 (+72%)** |
 
 A 72% increase in the group provision, from one missing `.strip()`, with no error, no
-warning and no control that would catch it — the `%recon_controls` totals are on EAD, which
+warning and no control that would catch it — and no parity failure in SAS to warn the
+engineer who removed it — the `%recon_controls` totals are on EAD, which
 is unaffected. This is the strongest argument in this pack for instrumenting every join
 with a match-rate check in the target implementation, and for making the parity harness of
 `docs/migration/TARGET.md` criterion 2 mandatory rather than advisory.

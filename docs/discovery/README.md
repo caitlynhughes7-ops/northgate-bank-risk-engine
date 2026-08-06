@@ -49,7 +49,8 @@ and flags the disagreement.
 5. **Twelve lookups, joins and fallbacks can miss without raising anything**, and in every case the
    code substitutes a default rather than failing. Two are live on the checked-in period
    (SF-02, and SF-11 where a `999` past-due sentinel is measured as up to date) and one
-   (SF-01) is a £6.5m migration trap. See [05](05_silent_failure_modes.md).
+   (SF-01) is a £6.5m porting trap that SAS's blank-padded string comparison currently
+   hides. See [05](05_silent_failure_modes.md).
 
 ## How to use this pack for the migration
 

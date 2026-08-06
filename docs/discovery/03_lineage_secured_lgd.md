@@ -36,7 +36,9 @@ Notes on the sources:
   `guessingrows=max`; the collateral import does not specify `guessingrows` and so uses
   the default (20 rows), meaning `VALUATION` could be typed from the first 20 rows only.
   Both `ACCOUNT_ID` columns are joined without any length or type normalisation on the
-  collateral side (the tape side is `left(compress(ACCOUNT_ID))`).
+  collateral side (the tape side is `left(compress(ACCOUNT_ID))`, which SAS's blank-padded
+  character comparison makes redundant here — but a Python port must reproduce it, see
+  [05](05_silent_failure_modes.md) SF-01).
 
 ## 2. Derivation in `%lgd_secured` (`sas/macros/m_lgd_secured.sas`)
 
