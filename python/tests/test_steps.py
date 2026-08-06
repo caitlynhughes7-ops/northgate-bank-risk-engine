@@ -12,6 +12,24 @@ def test_clean_legacy_values():
     x = clean(d)
     assert x.ACCOUNT_ID.iloc[0] == "ab" and x.DPD_N.iloc[0] == 0 and x.MONTHLY_PAYMENT.iloc[0] == 0 and x.EIR.iloc[0] == 0.03
 
+
+def test_io_flag_is_case_sensitive_after_trimming():
+    d = pd.DataFrame(
+        {
+            "ACCOUNT_ID": ["a", "b", "c"],
+            "DPD": ["0", "0", "0"],
+            "FORBEARANCE": ["N"] * 3,
+            "WATCHLIST": ["N"] * 3,
+            "DEFAULT_IND": ["N"] * 3,
+            "IO_FLAG": ["Y", "Y ", "y"],
+            "MONTHLY_PAYMENT": [4, 4, 4],
+            "EIR": [0.1] * 3,
+            "DRAWN_BAL": [1] * 3,
+            "UNDRAWN": [0] * 3,
+        }
+    )
+    assert clean(d).MONTHLY_PAYMENT.tolist() == [0, 0, 4]
+
 def test_arrears_part_month():
     d = pd.DataFrame({"DPD_N": [1], "MONTHLY_PAYMENT": [1], "DRAWN_BAL": [2000]})
     assert derive_arrears(d).ARREARS_BUCKET.iloc[0] == "0"

@@ -10,6 +10,6 @@ def clean(tape: pd.DataFrame) -> pd.DataFrame:
     d.loc[d["DPD_N"] == 999, "DPD_N"] = 0
     for source, target in [("FORBEARANCE", "FORBEARANCE_FL"), ("WATCHLIST", "WATCHLIST_FL"), ("DEFAULT_IND", "DEFAULT_FL")]:
         d[target] = d[source].astype("string").str.upper().isin(["Y", "YES", "1"])
-    d.loc[d["IO_FLAG"].astype("string").str.upper() == "Y", "MONTHLY_PAYMENT"] = 0
+    d.loc[d["IO_FLAG"].astype("string").str.strip() == "Y", "MONTHLY_PAYMENT"] = 0
     d.loc[d["EIR"] > 1, "EIR"] = d.loc[d["EIR"] > 1, "EIR"] / 100
     return d.drop(columns=["DPD", "FORBEARANCE", "WATCHLIST", "DEFAULT_IND"])
