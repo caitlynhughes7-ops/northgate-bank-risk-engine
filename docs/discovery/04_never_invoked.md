@@ -15,7 +15,8 @@ Result: **no `ext_*`, `ovr_*` or `rpt_*` macro is called anywhere in the reposit
 | | Files | Macro definitions |
 |---|---|---|
 | Reached by the batch | 23 (2 drivers, `autoexec.sas`, 2 format programs, 16 core, 2 utility) | 20 |
-| Never invoked | 48 | 113 |
+| Unreachable programs | 48 | 112 |
+| Never-called macro in a reached file | 1 (`%months_between` in `m_util_dates.sas`) | 1 |
 | Total in repository | 71 | 133 |
 
 The 48 unreachable files are the 15 `sas/etl/` extracts, the 12 `sas/macros/portfolio/`

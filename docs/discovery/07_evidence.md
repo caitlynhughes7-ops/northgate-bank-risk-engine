@@ -157,8 +157,10 @@ Effect of using the governed weights instead:
 | **Total** | **+£340,580.26 (+3.8%)** |
 
 The freeze that `docs/CHANGELOG.txt` v4.3 marked "TEMPORARY — revert after sign-off" in
-February 2020 is understating the provision by £0.34m on this period, and is the reason the
-scalar is insensitive to the downside scenario (KI-023).
+February 2020 is understating the provision by £0.34m on this period and has made the
+scalar insensitive to the downside scenario ever since. It does not explain the original
+KI-023 observation: `docs/ops/known_issues.md` raised that query in 2019-11, before the
+freeze. The query was never resolved, and the "TEMPORARY" freeze remains in place.
 
 ## SC-08 — personal loan discounting (KI-041)
 

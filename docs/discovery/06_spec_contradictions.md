@@ -65,9 +65,12 @@ points higher, halves the downside weight and removes the severe scenario entire
 provision is lower than the governed weights would produce, and Economics' sign-off of the
 scenario set has no effect on the weighting applied.
 
-This is also the explanation for KI-023 ("PIT scalar appears insensitive to the downside
-scenario. Economics queried; no change made"): the downside weight was cut from 0.30 to
-0.20 and the severe scenario zeroed, in code, four months before the query was raised.
+This is not the cause of the original KI-023 observation ("PIT scalar appears insensitive
+to the downside scenario. Economics queried; no change made"): KI-023 was raised in
+2019-11, before the v4.3 freeze dated 2020-02-14. Before the freeze, the governed 0.30
+downside weight was in force. The unresolved query is nevertheless consistent with the
+scalar being downside-insensitive ever since the freeze: the downside weight was reduced
+to 0.20 and the severe scenario zeroed, and the "TEMPORARY" freeze remains in place.
 
 `docs/migration/TARGET.md` requires configuration-driven parameters in the target state, so
 this item cannot simply be carried across: the migration has to decide whether to reproduce

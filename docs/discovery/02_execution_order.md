@@ -95,7 +95,7 @@ dependency graph is a diamond, not the straight line the RUNBOOK implies.
 Stage 3 measurement rule in `%ecl_calc` therefore consumes an `LGD` that was computed
 without knowing the stage.
 
-**EO-04 — the overlay is applied to the exposure record before ECL, and again inside it.**
+**EO-04 — the overlay factor is written before ECL and applied once inside the calculation.**
 Step 14 writes `OVERLAY_FACTOR`; step 16 multiplies by it once, in both the Stage 3
 branch and the non-Stage-3 branch. There is no second application, but note that step 14
 overwrites `stg.staged` fields into a new dataset `stg.exposure` whose name does not
