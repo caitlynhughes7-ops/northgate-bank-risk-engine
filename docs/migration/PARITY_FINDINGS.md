@@ -46,3 +46,25 @@ legacy behaviour preserved**.
 
 No model parameter was recalibrated. Quantified sensitivity results are
 recorded with the regression run and must accompany the model change record.
+
+* **Board-pack driver logic:** the board pack has no basis in the 2016
+  specification. It is engine logic living in the month-end driver
+  (`run_month_end.sas`), and the migration preserves its aggregation of
+  `out.ecl_by_segment` without adding COVERAGE. The legacy output is a SAS
+  dataset; the migration's CSV persistence is an explicit operational choice.
+* **Board-pack aggregation level:** the board pack aggregates already-
+  aggregated segment×stage output rather than account-level results. The
+  committed `board_pack_whatif.py` records per-segment currency deltas between
+  (a) unrounded segment×stage board-pack values, (b) direct account-level
+  segment sums, and (c) sums of rounded 2dp export rows in
+  `whatif_board_pack_202409.json`. For 202409, (a) versus (b) is zero to
+  floating-point precision for every segment (maximum absolute EAD delta
+  0.00000001 and ECL delta 0.0000000005). Relative to (c), the largest
+  currency deltas are EAD +0.00650 (CREDIT_CARD and OVERDRAFT) and ECL
+  +0.00394 (SME_TERM).
+* **All-missing board-pack groups:** SAS PROC SQL `sum()` ignores missing
+  values and returns missing when every value in a group is missing. The
+  Python implementation deliberately uses `min_count=1`. The 202409 baseline
+  contains no all-missing group, so parity cannot evidence this semantic; an
+  explicit Model Governance decision is required, with legacy behaviour
+  preserved.
