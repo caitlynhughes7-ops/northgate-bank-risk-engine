@@ -79,7 +79,7 @@ recurse into subdirectories).
 They are also unrunnable as written: every one of them starts with `where BOOK_CD = "<BOOK>"`,
 and `BOOK_CD` does not exist in the loan tape (`data/input/loan_tape_202409.csv` has no
 such column), in any staged dataset, or anywhere else in the repository outside these 12
-files and 4 report programs.
+files and 9 report programs.
 
 This is the largest single unknown in the pack, because these are not cosmetic. Each
 `%ovr_<book>` applies material model adjustments — a PD multiplier from 0.96 to 1.43, an
@@ -119,15 +119,18 @@ OVERLAY_FACTOR, ECL`):
 | Program | Column it needs that `stg.ecl_acct` does not have |
 |---|---|
 | `rpt_pillar3_cr1`, `rpt_pillar3_cr2` | `REGION` (dropped at driver step 11) |
-| `rpt_ifrs7_coverage`, `rpt_ifrs7_stage_recon` | `BOOK_CD` (never created anywhere) |
+| `rpt_ifrs7_coverage`, `rpt_ifrs7_stage_recon`, `rpt_pillar3_cq1` | `BOOK_CD` (never created anywhere) |
 | `rpt_audit_sample_extract`, `rpt_pillar3_cq3`, `rpt_gl_feed_recon` | `SICR_REASON` (created at step 13, dropped at step 16) |
 | `rpt_board_sensitivity`, `rpt_eba_fintrep_18`, `rpt_model_monitoring`, `rpt_gl_journal_extract`, `rpt_gl_feed_recon` | `DEFAULT_FL` (dropped at step 16) |
 | `rpt_board_sensitivity`, `rpt_eba_fintrep_18` | `ARREARS_BUCKET` (dropped at step 11) |
 | `rpt_pillar3_cr2`, `rpt_ifrs7_coverage`, `rpt_irb_backtest_lgd`, `rpt_prior_period_compare` | `FORBEARANCE_FL` (dropped at step 16) |
 | `rpt_gl_feed_recon` | `PD_LIFETIME` (dropped at step 16) |
 
-The `_validate` macros add a second layer of the same problem: seven of them join the
-prior period on `c.BOOK_CD = p.BOOK_CD`, and several join on `c.STAGE = p.STAGE` against
+The `_validate` macros add a second layer of the same problem: six of them
+(`eba_fintrep_18`, `gl_journal_extract`, `irb_backtest_pd`, `pillar3_cq3`, `pillar3_cr2`,
+`stress_icaap_feed`) join the prior period on `c.BOOK_CD = p.BOOK_CD` — so `BOOK_CD` is
+referenced by nine report programs in total, three in their main extract and six in their
+validation — and several join on `c.STAGE = p.STAGE` against
 a table they themselves created without a `STAGE` column. Every `_validate` macro reads
 `hist.<report>_&PRIOR_YYYYMM`, and nothing in the batch ever writes to `hist`, so on a
 first run every one of them fails on a non-existent table. Several of the `where` filters

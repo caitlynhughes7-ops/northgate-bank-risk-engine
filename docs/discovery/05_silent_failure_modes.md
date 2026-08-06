@@ -231,9 +231,9 @@ in the code, so the severe scenario is already excluded (SC-02).
   after each join.
 - **`%put ERROR:` does not fail the batch.** `%recon_controls`, `%map_product_hierarchy`
   and the (never-invoked) ETL and report validators all report problems with `%put`. Only
-  `%assert_rows` aborts. Combined with the `grep -c` bug in `jobs/monthly_ecl.sh`
-  ([02](02_execution_order.md) EO-08), the batch's failure signalling is unreliable in
-  both directions.
+  `%assert_rows` aborts. The shell wrapper's only failure signal is `^ERROR` in the SAS
+  log ([02](02_execution_order.md) EO-08), so a run that produced a wrong number exits 0
+  unless SAS itself logged an error.
 - **The migration must decide, per item, preserve or fix.** Per
   `docs/migration/TARGET.md` acceptance criterion 5, none of these should be quietly
   corrected during the port. SF-02 in particular changes the reported provision, so

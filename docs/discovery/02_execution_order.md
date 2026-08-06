@@ -118,13 +118,20 @@ is set up in `autoexec.sas`; the only code that reads or writes `hist` is the re
 not correspond to any code in this repository: the string `ECL_HIST` does not appear in
 it, and every batch output is written with `replace`.
 
-**EO-08 — the shell wrapper cannot fail the job the way it intends.** `jobs/monthly_ecl.sh`
-runs under `set -e` and ends with `grep -c '^ERROR' <log> && { ...; exit 1; }`. `grep -c`
-exits non-zero when the count is zero, i.e. when the run was clean — under `set -e` that
-terminates the script before the success message, and the `&&` branch only runs when
-errors *were* found. Net effect: a clean run exits non-zero with no message, an
-errored run exits 1. Also, `ERROR:` messages raised by macros via `%put` do not stop the
-run; only `%assert_rows` aborts (`%abort cancel`).
+**EO-08 — the shell wrapper's failure signal depends only on `ERROR:` reaching the log.**
+`jobs/monthly_ecl.sh` runs under `set -e` and ends with
+`grep -c '^ERROR' <log> && { echo ...; exit 1; }`. The exit-status handling is correct:
+`set -e` exempts a command that is not the last in an `&&` list, so a clean run (where
+`grep` exits 1 because the count is zero) skips the block, prints the success message and
+exits 0, while an errored run exits 1. The only oddity is cosmetic — `grep -c` writes the
+count `0` to stdout on a clean run, so the job log contains a bare `0` line.
+
+The real limitation is what the check can see. It matches `^ERROR` at the start of a line,
+so it catches the SAS log's own `ERROR:` lines, but `ERROR:` messages that macros raise via
+`%put` do not stop the run — only `%assert_rows` aborts (`%abort cancel`) — and the
+controls that would raise them execute after the disclosure files have already been
+written (EO-05). A job that has published a wrong number can therefore still exit 0 unless
+SAS itself logged an error.
 
 **EO-09 — the run depends on the working directory.** `autoexec.sas` sets `%let BASE = ..`,
 so every config and format path is relative to `sas/`. `jobs/monthly_ecl.sh` does
