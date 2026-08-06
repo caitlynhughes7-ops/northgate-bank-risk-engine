@@ -23,3 +23,9 @@ explicitly retained for parity: the v4.3 frozen scenario weights, the BTL
 haircut code mismatch, the KI-041 personal-loan discount formula, and the
 specific uplift, overlay, CCF and PD masterscale values embedded in later SAS
 macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
+
+| Legacy field | Source extract and transformations | Python / SAS implementation | Output artifact | Spec basis |
+|---|---|---|---|---|
+| RPT_DT | `&PERIOD` sysparm from `jobs/monthly_ecl.sh`, whitespace-trimmed | `period_dates.py` / `m_util_dates.sas` | Run log NOTE only; no disclosure column | No reporting-period field basis in `ECL_Model_Spec_v3_2016.md` |
+| RPT_DT_SAS | Month/year substrings from `&PERIOD`, aligned to month end and retained as SAS date serial | `period_dates.py` / `m_util_dates.sas` | Run log NOTE only; no disclosure column | No reporting-date basis in `ECL_Model_Spec_v3_2016.md` |
+| PRIOR_YYYYMM | One month before `RPT_DT_SAS`, month-end aligned and rendered `yymmn6.` | `period_dates.py` / `m_util_dates.sas` | Run log NOTE only; no disclosure column | No prior-period basis in `ECL_Model_Spec_v3_2016.md` |
