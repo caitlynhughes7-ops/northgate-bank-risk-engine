@@ -1,0 +1,12 @@
+PARAM,VALUE
+active_scenario_weights,frozen_v43
+max_term_m,120
+stage_1_horizon_m,12
+unsecured_lgd_floor,0.45
+macro_gdp_coefficient,-0.85
+macro_unemployment_coefficient,0.22
+macro_unemployment_base,4.2
+arrears_uplift_1_29,1.35
+arrears_uplift_30_59,2.60
+arrears_uplift_60_89,4.10
+forbearance_uplift,1.50

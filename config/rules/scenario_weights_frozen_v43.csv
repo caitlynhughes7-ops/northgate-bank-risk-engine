@@ -1,0 +1,6 @@
+# Extracted verbatim from m_pd_pit.sas v4.3 year-end reporting freeze.
+SCENARIO,WEIGHT
+BASE,0.70
+UPSIDE,0.10
+DOWNSIDE,0.20
+SEVERE,0.00
