@@ -11,7 +11,7 @@ Quantified impacts on the 202409 sample period are in [07_evidence.md](07_eviden
 |---|---|---|---|
 | SF-01 | `%lgd_secured`, collateral join | `ACCOUNT_ID` mismatch, or a late/short/stale collateral extract | LGD forced to 1.00 for the affected secured exposures |
 | SF-02 | `%lgd_secured`, haircut join on `PROD_CD` | Product code not in `collateral_haircuts.csv` | `HAIRCUT = 0`, secured LGD understated — this is live today for the whole BTL book |
-| SF-03 | `%lgd_secured`, floor join on `SEGMENT` | Segment not in `lgd_floors.csv` | No regulatory floor applied |
+| SF-03 | `%lgd_secured`, floor join on `SEGMENT` | Secured segment not in `lgd_floors.csv` | No regulatory floor applied (latent — all six segments match today) |
 | SF-04 | `%map_product_hierarchy`, product join | `PROD_CD` not in `product_hierarchy.csv` | Null `SEGMENT`/`SECURED_FLAG`; exposure treated as unsecured with LGD 0.65 and lands in a blank segment in the disclosure |
 | SF-05 | driver step 12, `stg.pd_lifetime` join | Any exposure absent from `stg.pd_curve` | `PD_LIFETIME` missing → quantitative SICR test cannot fire → exposure stays Stage 1 |
 | SF-06 | `%staging_sicr`, threshold join on `SEGMENT` | Segment not in `sicr_thresholds.csv` | Hardcoded fallback thresholds (2.0 / 0.01 / 30) applied silently |
@@ -96,10 +96,17 @@ from &outds as b left join stg.floors as f on b.SEGMENT = f.SEGMENT
 ```
 
 `max()` with two arguments is the row-wise SAS function and it **ignores missing values**,
-so an unmatched segment yields `LGD = LGD_RAW` with no floor and no warning. Any exposure
-whose `SEGMENT` is null (see SF-04) or whose segment is not in `lgd_floors.csv` bypasses
-the regulatory floor entirely. Spec section 4.1 requires the floor to be applied after
-the collateral calculation; the code applies it only when the join happens to match.
+so an unmatched segment yields `LGD = LGD_RAW` with no floor and no warning: a secured
+segment that is not in `lgd_floors.csv` bypasses the regulatory floor entirely. Spec
+section 4.1 requires the floor to be applied after the collateral calculation; the code
+applies it only when the join happens to match.
+
+This is latent rather than live — every segment in `config/rules/product_hierarchy.csv` is
+present in `lgd_floors.csv` today, so the join matches for all six. It becomes live the
+first time a segment is added to the hierarchy without being added to the floors file, and
+there is nothing in the batch that would report it. Note that it does **not** apply to
+null-segment exposures from SF-04: those are excluded from `%lgd_secured` altogether and
+are measured on the unsecured leg, which has its own hardcoded floor.
 
 ### SF-04 — unmapped products are reported as a WARNING and then measured anyway
 
@@ -113,7 +120,11 @@ requirement". Downstream, an unmapped exposure has `SEGMENT = null` and
   `ne 'Y'` in SAS), giving it the `otherwise` LGD of 0.65 — so a secured exposure with a
   new product code is measured as unsecured;
 - `%staging_sicr`'s threshold join misses (SF-06), so it gets the fallback thresholds;
-- the floor join misses (SF-03), so no floor is applied;
+- the secured floor join (SF-03) is never reached, because `%lgd_secured` excluded the row.
+  The unsecured leg's hardcoded `LGD = max(LGD_RAW, 0.45)` applies instead and is
+  non-binding against the 0.65 fallback, so an exposure that should have been floored at
+  its secured segment floor is instead measured at 65% — conservative for a mortgage,
+  but not the governed number for any segment;
 - `%aggregate_reporting` groups by `SEGMENT`, so it appears as a blank segment row in
   `ecl_by_segment_<period>.csv` and as a blank `SEGMENT` in the fixed-width GL feed, where
   Finance's loader has 20 blank characters where a segment code should be.
@@ -203,6 +214,10 @@ if DPD in ('N/A','','.','NULL') then _dpd = 0;
 else if input(DPD, best12.) = 999 then _dpd = 0;  /* sentinel = closed */
 else _dpd = input(DPD, best12.);
 ```
+
+This is live in the sample period: 18 tape rows carry `999` and 14 carry `N/A`, together
+£6.07m of EAD, and on the stricter reading of `999` the provision is £0.57m light
+([07](07_evidence.md) SF-11).
 
 The `999` sentinel is documented in the comment as meaning "closed", but the record is not
 excluded — it is measured with `DPD_N = 0`, so it is not caught by the 30-day Stage 2

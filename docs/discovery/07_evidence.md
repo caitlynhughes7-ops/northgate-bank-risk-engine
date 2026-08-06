@@ -32,16 +32,19 @@ migration:
 
 Caveat on scope: this exercises the calculation chain against one period of synthetic data
 (`tools/make_sample_data.py`). It says nothing about production data volumes, the ETL layer
-or the report layer, and it cannot confirm behaviour on inputs the sample does not contain
-(there are no unmapped product codes and no `999` DPD sentinels in it, for example).
+or the report layer, and it cannot confirm behaviour on inputs the sample does not contain —
+all nine `PROD_CD` values on the tape are in `product_hierarchy.csv`, so SF-04 (unmapped
+products) is unexercised here and its consequences are read from the code rather than
+measured. SF-03, SF-05 and SF-08 to SF-10 are likewise latent on this data. SF-11, by
+contrast, is live in the baseline — see below.
 
 ## The secured LGD model is non-binding for 99.3% of the secured book
 
 | | Accounts | EAD |
 |---|---:|---:|
-| Secured exposures | 1,054 | £348.9m |
+| Secured exposures | 1,054 | £350,961,029.75 |
 | …whose LGD equals the segment regulatory floor exactly | **1,047** | **£348,375,989.99** |
-| …whose LGD is set by the collateral calculation | 7 | £0.5m |
+| …whose LGD is set by the collateral calculation | 7 | £2,585,039.76 |
 
 By segment: BTL 254 of 254, retail mortgage 666 of 669, SME secured 127 of 131.
 
@@ -103,6 +106,36 @@ exposures), which is itself worth a look — 605 of 669 retail mortgages sit in 
 by a lifetime PD built from a constant hazard over up to 120 months being compared with a
 `PD_LIFETIME_ORIG` supplied on the tape on an unknown basis (see
 [05](05_silent_failure_modes.md) SF-07).
+
+## SF-11 — the DPD sentinels are live in the baseline
+
+The sample tape carries 18 rows with `DPD = 999` and 14 with `DPD = 'N/A'`; `%clean_loan_tape`
+maps both to `DPD_N = 0`. So the reported provision already contains accounts that are
+staged as though they were up to date:
+
+| Tape `DPD` | Accounts | EAD | Currently Stage 1 | Stage 2 | Stage 3 |
+|---|---:|---:|---:|---:|---:|
+| `999` | 18 | £4,025,759.63 | 6 | 11 | 1 |
+| `N/A` | 14 | £2,048,674.78 | 6 | 7 | 1 |
+
+If `999` means what the field says rather than what the comment says — 999 days past due
+rather than "closed" — then 17 of the 18 (the eighteenth is already Stage 3) are
+credit-impaired under the 90-day trigger and spec §6:
+
+| | Value |
+|---|---:|
+| Accounts moving to Stage 3 | 17 |
+| Their EAD | £3,986,618.44 |
+| **ECL understatement** | **£566,275.83 (+6.3% of total ECL)** |
+
+By segment: retail mortgage +£238,522, SME term +£205,749, BTL +£76,060, personal loan
++£30,239, credit card +£15,706. The `N/A` rows change nothing, since a genuinely unknown
+DPD has no trigger either way.
+
+Which reading is right is a data question, not a code question: it depends on what the
+collections platform actually emits `999` for, and the only statement of intent is a
+code comment. It needs confirming with Collections before the migration reproduces the
+behaviour, because on this period it is worth £0.57m of provision.
 
 ## SC-02 — the "temporary" 2020 scenario weight freeze
 
@@ -171,6 +204,7 @@ with a match-rate check in the target implementation, and for making the parity 
 | SC-02 | Hardcoded 2020 scenario weights | understates | £340,580 (+3.8%) |
 | SC-06 | SICR quantitative test is AND, spec says OR | understates | £125,445 (+1.4%), 296 exposures and £33.9m of EAD re-staged |
 | SC-08 | Personal loan simple-interest discounting (KI-041) | overstates | £10,484 (−0.1%) |
+| SF-11 | `DPD = 999` treated as up to date | understates, if `999` means past due | £566,276 (+6.3%), 17 exposures not staged as credit-impaired |
 | SF-01 | Collateral join depends on ID normalisation | migration risk | £6,476,689 (+72%) if lost |
 | — | Secured collateral model non-binding | n/a | 1,047 of 1,054 secured exposures priced at the floor |
 

@@ -47,8 +47,9 @@ and flags the disagreement.
    [05](05_silent_failure_modes.md) SF-02 and [07](07_evidence.md). It is understating the
    buy-to-let provision by 31.9% on the checked-in sample period.
 5. **Twelve lookups, joins and fallbacks can miss without raising anything**, and in every case the
-   code substitutes a default rather than failing. Four of them change the reported
-   provision. See [05](05_silent_failure_modes.md).
+   code substitutes a default rather than failing. Two are live on the checked-in period
+   (SF-02, and SF-11 where a `999` past-due sentinel is measured as up to date) and one
+   (SF-01) is a £6.5m migration trap. See [05](05_silent_failure_modes.md).
 
 ## How to use this pack for the migration
 
