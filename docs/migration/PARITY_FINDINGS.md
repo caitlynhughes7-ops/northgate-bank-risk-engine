@@ -69,3 +69,24 @@ decision.
 * **Unlabelled out-of-range stage:** `stage.` has no `other` clause. An
   out-of-range stage consequently renders as a bare number in an otherwise
   labelled column, rather than receiving a catch-all label.
+
+## Rating masterscale display format (`sas/formats/fmt_ratings.sas`)
+
+* **Defined but unapplied:** `sas/autoexec.sas` includes the format source, but
+  no reachable batch program applies it: the 15 `sas/etl/` extracts, including
+  `%ext_rating_grades`, are never invoked. Therefore no numeric impact can be
+  quantified and no parity claim is made; legacy behaviour preserved, raised
+  for Model Governance decision.
+* **Silent missing/out-of-range display:** `grade.` has no `other` catch-all,
+  so an out-of-range grade renders as a bare number and a missing grade as `.`
+  in an otherwise labelled column. A data-quality break is invisible on the
+  face of the report rather than raising an error; legacy behaviour preserved,
+  raised for Model Governance decision.
+* **Governed masterscale:** the reference values are marked “do not amend
+  without Model Governance approval” and were copied byte-for-byte; legacy
+  behaviour preserved, raised for Model Governance decision.
+* **Padding and alignment:** Python returns labels unpadded, whereas SAS
+  `put()` pads/aligns the result to the format width (6, the longest label).
+  This is a known presentation difference rather than preserved legacy
+  behaviour, and follows the convention already set by the migrated
+  `$seg.`/`stage.` unit; raised for Model Governance decision.

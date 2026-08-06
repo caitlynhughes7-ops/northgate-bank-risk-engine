@@ -2,7 +2,14 @@ import pandas as pd
 import pytest
 
 from ecl.config import table
-from ecl.formats import segment_label, segment_labels, stage_label, stage_labels
+from ecl.formats import (
+    grade_label,
+    grade_labels,
+    segment_label,
+    segment_labels,
+    stage_label,
+    stage_labels,
+)
 
 
 @pytest.mark.parametrize(
@@ -97,4 +104,75 @@ def test_format_config_matches_sas_source_verbatim():
         {"STAGE": 1, "LABEL": "Stage 1 - 12m ECL"},
         {"STAGE": 2, "LABEL": "Stage 2 - lifetime ECL"},
         {"STAGE": 3, "LABEL": "Stage 3 - credit impaired"},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("value", "label"),
+    [
+        (1, "AAA/AA"),
+        (2, "A"),
+        (3, "BBB+"),
+        (4, "BBB"),
+        (5, "BBB-"),
+        (6, "BB+"),
+        (7, "BB"),
+        (8, "BB-"),
+        (9, "B+"),
+        (10, "B"),
+        (11, "B-"),
+        (12, "CCC"),
+        (13, "CC"),
+        (14, "C"),
+        (15, "D"),
+    ],
+)
+def test_grade_labels_match_legacy_values(value, label):
+    assert grade_label(value) == label
+
+
+@pytest.mark.parametrize("value", [7, 7.0, "7", "7.0", " 7 "])
+def test_grade_lookup_is_numeric_across_input_types(value):
+    assert grade_label(value) == "BB"
+
+
+def test_series_formats_float_promoted_grades():
+    grades = pd.Series([7, None], dtype="float64", name="RATING_GRADE")
+    original = grades.copy()
+
+    assert grade_labels(grades).tolist() == ["BB", "."]
+    assert grade_labels(grades).dtype == "object"
+    pd.testing.assert_series_equal(grades, original)
+
+
+@pytest.mark.parametrize(
+    ("value", "label"),
+    [(0, "0"), (16, "16"), (16.0, "16"), (20.5, "20.5"), (-1, "-1")],
+)
+def test_grade_unmatched_numeric_has_no_catch_all_label(value, label):
+    assert grade_label(value) == label
+
+
+@pytest.mark.parametrize("value", [None, float("nan"), "", "not-a-grade"])
+def test_grade_missing_or_non_numeric_uses_sas_missing_rendering(value):
+    assert grade_label(value) == "."
+
+
+def test_grade_format_config_matches_sas_source_verbatim():
+    assert table("fmt_grade.csv").to_dict("records") == [
+        {"RATING_GRADE": 1, "LABEL": "AAA/AA"},
+        {"RATING_GRADE": 2, "LABEL": "A"},
+        {"RATING_GRADE": 3, "LABEL": "BBB+"},
+        {"RATING_GRADE": 4, "LABEL": "BBB"},
+        {"RATING_GRADE": 5, "LABEL": "BBB-"},
+        {"RATING_GRADE": 6, "LABEL": "BB+"},
+        {"RATING_GRADE": 7, "LABEL": "BB"},
+        {"RATING_GRADE": 8, "LABEL": "BB-"},
+        {"RATING_GRADE": 9, "LABEL": "B+"},
+        {"RATING_GRADE": 10, "LABEL": "B"},
+        {"RATING_GRADE": 11, "LABEL": "B-"},
+        {"RATING_GRADE": 12, "LABEL": "CCC"},
+        {"RATING_GRADE": 13, "LABEL": "CC"},
+        {"RATING_GRADE": 14, "LABEL": "C"},
+        {"RATING_GRADE": 15, "LABEL": "D"},
     ]
