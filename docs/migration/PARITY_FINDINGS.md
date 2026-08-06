@@ -144,6 +144,12 @@ only evidence provided. No numeric parity is claimed: orchestration does not
 produce a captured numeric comparison artifact, and the Python engine is used
 only through its existing bootstrap and engine surfaces.
 
+**Scope and cutover precondition:** The legacy job also produces the
+`out.board_pack` Pillar 3 extract, but that step belongs to the separate
+board-pack migration unit and is intentionally out of scope here. Control-M
+must not be cut over to this entry point until the migrated board-pack step has
+landed and this orchestration invokes it.
+
 * **Controls run after publication (EO-05):** Cause: the legacy driver
   publishes disclosure and GL outputs before its controls, as described by
   `docs/discovery/02_execution_order.md`. Consequence: a wrong number that
@@ -185,3 +191,19 @@ only through its existing bootstrap and engine surfaces.
   output; engine tracebacks are recorded in the log but do not themselves
   begin with `ERROR:`. Decision required: decide where structured Python
   error logging and control signalling will be owned.
+* **Board-pack output is a cross-unit dependency:** Cause: the legacy job
+  invokes `sas/driver/run_month_end.sas`, which includes the ECL chain and
+  then runs the `out.board_pack` extract, while this migration reaches only
+  the ECL chain because the board-pack step is a separate unit not present on
+  this base. Consequence: pointing Control-M at this entry point would stop
+  producing the Pillar 3 board pack while still exiting 0. Decision required:
+  the job must invoke the migrated board-pack step once that unit lands, and
+  this PR must not be cut over to Control-M before then.
+* **Unvalidated path traversal is preserved:** Cause: legacy lines 6–7 do no
+  period or environment validation, and line 21 interpolates both values into
+  `../logs/ecl_${PERIOD}_${ENVN}.log`; the migration preserves that contract.
+  Consequence: a period or environment containing `..` or `/` can make the job
+  truncate and write to an arbitrary path, although exploitation requires
+  control of the scheduler's job arguments. Decision required: decide whether
+  argument validation should be added as a deliberate, approved contract
+  change.
