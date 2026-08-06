@@ -1,6 +1,8 @@
 import pandas as pd
+from .config import params
 
 def derive_arrears(d: pd.DataFrame) -> pd.DataFrame:
+    threshold = float(params()["arrears_part_month_threshold"])
     x = d.copy()
     x["ARREARS_BUCKET"] = "UNK"
     x.loc[x.DPD_N == 0, "ARREARS_BUCKET"] = "0"
@@ -8,6 +10,6 @@ def derive_arrears(d: pd.DataFrame) -> pd.DataFrame:
     x.loc[x.DPD_N.between(30, 59), "ARREARS_BUCKET"] = "30-59"
     x.loc[x.DPD_N.between(60, 89), "ARREARS_BUCKET"] = "60-89"
     x.loc[x.DPD_N >= 90, "ARREARS_BUCKET"] = "90+"
-    adjust = (x.ARREARS_BUCKET == "1-29") & (x.MONTHLY_PAYMENT > 0) & (x.DRAWN_BAL > 0) & ((x.DPD_N * x.MONTHLY_PAYMENT / x.DRAWN_BAL) < 0.001)
+    adjust = (x.ARREARS_BUCKET == "1-29") & (x.MONTHLY_PAYMENT > 0) & (x.DRAWN_BAL > 0) & ((x.DPD_N * x.MONTHLY_PAYMENT / x.DRAWN_BAL) < threshold)
     x.loc[adjust, "ARREARS_BUCKET"] = "0"
     return x

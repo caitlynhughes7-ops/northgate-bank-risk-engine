@@ -10,3 +10,7 @@ arrears_uplift_1_29,1.35
 arrears_uplift_30_59,2.60
 arrears_uplift_60_89,4.10
 forbearance_uplift,1.50
+arrears_part_month_threshold,0.001
+sicr_default_rel_pd_mult,2.0
+sicr_default_abs_pd_incr,0.01
+sicr_default_dpd_trigger,30

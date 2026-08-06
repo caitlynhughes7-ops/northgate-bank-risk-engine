@@ -1,11 +1,12 @@
 import pandas as pd
-from .config import table
+from .config import params, table
 
 def stage(d: pd.DataFrame) -> pd.DataFrame:
+    p = params()
     x = d.merge(table("sicr_thresholds.csv"), on="SEGMENT", how="left")
-    x["REL_PD_MULT"] = x.REL_PD_MULT.fillna(2.0)
-    x["ABS_PD_INCR"] = x.ABS_PD_INCR.fillna(0.01)
-    x["DPD_TRIGGER"] = x.DPD_TRIGGER.fillna(30)
+    x["REL_PD_MULT"] = x.REL_PD_MULT.fillna(float(p["sicr_default_rel_pd_mult"]))
+    x["ABS_PD_INCR"] = x.ABS_PD_INCR.fillna(float(p["sicr_default_abs_pd_incr"]))
+    x["DPD_TRIGGER"] = x.DPD_TRIGGER.fillna(float(p["sicr_default_dpd_trigger"]))
     x["STAGE"] = 1
     x["SICR_REASON"] = "NONE"
     mask = x.DEFAULT_FL | (x.DPD_N >= 90)
