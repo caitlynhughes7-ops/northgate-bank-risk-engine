@@ -35,3 +35,19 @@ macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
 These formats are defined in the legacy autoexec but are not applied by any
 reachable batch program. The Python unit preserves their display behaviour
 without importing it into any calculation module.
+
+## Environment bootstrap lineage
+
+| Field / assignment | Source file and SAS statement | Python symbol | Spec basis |
+|---|---|---|---|
+| ENV | `config/env/{uat,prod}.cfg`, `%let ENV = ...` | `EnvironmentSettings.env` | No specification basis |
+| INBOUND | `config/env/{uat,prod}.cfg`, `%let INBOUND = ...` | `EnvironmentSettings.inbound` | No specification basis |
+| OUTBOUND | `config/env/{uat,prod}.cfg`, `%let OUTBOUND = ...` | `EnvironmentSettings.outbound` | No specification basis |
+| HISTLIB | `config/env/{uat,prod}.cfg`, `%let HISTLIB = ...` | `EnvironmentSettings.histlib` | No specification basis |
+| RECON_TOL | `config/env/{uat,prod}.cfg`, `%let RECON_TOL = ...` | `EnvironmentSettings.recon_tol`, `recon_tolerance` | No specification basis |
+| MAX_TERM_M | `config/env/{uat,prod}.cfg`, `%let MAX_TERM_M = ...` | `EnvironmentSettings.max_term_m`, `max_term_months` | No specification basis |
+| raw | `sas/autoexec.sas`, `libname raw "&INBOUND" access=readonly` | `Environment.raw` | No specification basis |
+| stg | `sas/autoexec.sas`, `libname stg "&ROOT"` | `Environment.stg` | No specification basis |
+| out | `sas/autoexec.sas`, `libname out "&OUTBOUND"` | `Environment.out` | No specification basis |
+| hist | `sas/autoexec.sas`, `libname hist "&HISTLIB"` | `Environment.hist` | No specification basis |
+| Autocall path | `sas/autoexec.sas`, `options sasautos=("&BASE./sas/macros" sasautos)` | `Environment.autocall_path` | No specification basis |
