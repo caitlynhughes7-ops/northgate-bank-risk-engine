@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import ecl.cli as cli_module
+import ecl.engine as engine_module
 from ecl.engine import run
 import ecl.recon as recon_module
 from ecl.recon import best12, recon_controls
@@ -175,3 +177,50 @@ def test_engine_publishes_before_controls(tmp_path, capsys):
     )
     assert (tmp_path / "data/output/ecl_by_segment_202409.csv").exists()
     assert (tmp_path / "data/output/ECL_GL_FEED_202409.txt").exists()
+
+
+def test_engine_forwards_prod_environment_to_recon(monkeypatch):
+    # The run environment resolves the legacy PROD RECON_TOL value.
+    captured = []
+
+    def capture(*args, **kwargs):
+        result = recon_module.recon_controls(*args, **kwargs)
+        captured.append((kwargs["env"], result.recon_tolerance_loaded))
+
+    monkeypatch.setattr(
+        engine_module,
+        "recon_controls",
+        capture,
+    )
+    run("202409", ROOT, write=False, env="prod")
+    assert captured == [("prod", 0.0005)]
+
+
+def test_engine_default_environment_forwards_none_to_recon(monkeypatch):
+    # Omitting env preserves the configured UAT default in recon_controls.
+    captured = []
+
+    def capture(*args, **kwargs):
+        result = recon_module.recon_controls(*args, **kwargs)
+        captured.append((kwargs["env"], result.recon_tolerance_loaded))
+
+    monkeypatch.setattr(
+        engine_module,
+        "recon_controls",
+        capture,
+    )
+    run("202409", ROOT, write=False)
+    assert captured == [(None, 0.005)]
+
+
+def test_cli_forwards_env_option(monkeypatch):
+    # The CLI passes --env through to the engine without altering calculations.
+    captured = []
+    monkeypatch.setattr(
+        cli_module,
+        "run",
+        lambda period, env=None: captured.append((period, env)),
+    )
+    monkeypatch.setattr("sys.argv", ["ecl", "--period", "202409", "--env", "prod"])
+    cli_module.main()
+    assert captured == [("202409", "prod")]

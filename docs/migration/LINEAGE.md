@@ -54,7 +54,7 @@ the legacy macro and spec §8.
 | Null-stage threshold | `recon_controls.csv:null_stage_error_threshold` | `recon.py` / `%if &n_nullstage > 0` | §8 control intent |
 | Timestamp | Runtime clock via `log_step` | `util_logging.py` / `%log_step` | no specification basis |
 | BEST12 rendering | Configured format and retained width | `recon.py` / SQL `INTO` macro variables | no explicit basis; documented assumption |
-| RECON_TOL | Parsed from environment, exposed but unused | `recon.py` / `%let RECON_TOL` | required by §8 but absent from legacy code |
+| RECON_TOL | Resolved from the run environment, exposed but unused | `recon.py` / `%let RECON_TOL` from `-sysparm "<period> <env>"` | required by §8 but absent from legacy code |
 
 The corrected comparison, tolerance, and blocking order required by §8 have
 no implementation basis in the legacy macro and remain an open governance
