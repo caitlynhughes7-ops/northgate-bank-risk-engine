@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -63,8 +64,6 @@ def test_observability_threshold_comes_from_config(monkeypatch):
 
 def test_observability_artifact_is_strict_json_and_no_official_paths(tmp_path):
     # The tool writes only observability output under the supplied temporary root.
-    import shutil
-
     shutil.copytree(Path(__file__).resolve().parents[2] / "data/input", tmp_path / "data/input")
     env = os.environ.copy()
     env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2] / "python")
