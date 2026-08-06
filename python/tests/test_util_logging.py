@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -69,7 +70,11 @@ def test_log_step_default_sink_writes_one_line_to_stdout(capsys):
 
 def test_engine_logs_legacy_steps_in_driver_order(capsys):
     run("202409", ROOT)
-    names = [line.split(" ")[2] for line in capsys.readouterr().out.splitlines()]
+    names = [
+        line.split(" ")[2]
+        for line in capsys.readouterr().out.splitlines()
+        if re.search(r"\(\d{2}[A-Z]{3}\d{4}:\d{2}:\d{2}:\d{2}\)$", line)
+    ]
     assert names == [
         "load_loan_tape",
         "clean_loan_tape",
@@ -86,4 +91,5 @@ def test_engine_logs_legacy_steps_in_driver_order(capsys):
         "ecl_calc",
         "aggregate_reporting",
         "export_disclosure",
+        "recon_controls",
     ]
