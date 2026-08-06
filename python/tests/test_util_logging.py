@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -72,24 +73,7 @@ def test_engine_logs_legacy_steps_in_driver_order(capsys):
     names = [
         line.split(" ")[2]
         for line in capsys.readouterr().out.splitlines()
-        if line.split(" ")[2] in {
-            "load_loan_tape",
-            "clean_loan_tape",
-            "map_product_hierarchy",
-            "derive_arrears",
-            "ead_ccf",
-            "pd_pit",
-            "pd_term_structure",
-            "lgd_secured",
-            "lgd_unsecured",
-            "staging_sicr",
-            "fli_overlay",
-            "discount_eir",
-            "ecl_calc",
-            "aggregate_reporting",
-            "export_disclosure",
-            "recon_controls",
-        }
+        if re.search(r"\(\d{2}[A-Z]{3}\d{4}:\d{2}:\d{2}:\d{2}\)$", line)
     ]
     assert names == [
         "load_loan_tape",

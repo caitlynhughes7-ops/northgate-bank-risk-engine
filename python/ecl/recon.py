@@ -4,7 +4,6 @@ from pathlib import Path
 import re
 from collections.abc import Callable
 
-import numpy as np
 import pandas as pd
 
 from .config import table
@@ -26,7 +25,7 @@ def _params() -> dict[str, str]:
     return dict(zip(values.PARAM, values.VALUE))
 
 
-def _env_tolerance(env: str) -> float:
+def env_recon_tolerance(env: str) -> float:
     root = Path(__file__).resolve().parents[2]
     text = (root / "config" / "env" / f"{env.lower()}.cfg").read_text()
     match = re.search(r"%let\s+RECON_TOL\s*=\s*([^;]+);", text, re.IGNORECASE)
@@ -43,7 +42,7 @@ def _sas_sum(frame: pd.DataFrame, column: str) -> float | None:
 
 
 def _numeric_missing(value: object) -> bool:
-    return isinstance(value, (float, np.floating)) and bool(pd.isna(value))
+    return not isinstance(value, str) and bool(pd.isna(value))
 
 
 def best12(value: float | int | None) -> str:
@@ -69,6 +68,12 @@ def best12(value: float | int | None) -> str:
                     raw = candidate
                     break
         if raw is None:
+            for decimals in range(exponent_decimals + 1):
+                candidate = f"{number:.{decimals}E}"
+                if len(candidate) <= width and float(candidate) == number:
+                    raw = candidate
+                    break
+        if raw is None:
             for decimals in range(exponent_decimals, -1, -1):
                 candidate = f"{number:.{decimals}E}"
                 if len(candidate) <= width:
@@ -87,7 +92,7 @@ def recon_controls(
 ) -> ReconControlsResult:
     params = _params()
     selected_env = env or params["default_env"]
-    tolerance = _env_tolerance(selected_env)
+    tolerance = env_recon_tolerance(selected_env)
     log_step("recon_controls", now=now, emit=emit)
 
     drawn = _sas_sum(tape, "DRAWN_BAL")

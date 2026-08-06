@@ -6,7 +6,8 @@ from ecl.clean import clean
 from ecl.engine import run
 from ecl.io import load_period
 from ecl.product import map_products
-from ecl.recon import _env_tolerance
+from ecl.recon import env_recon_tolerance
+from ecl.config import table
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,9 +28,13 @@ def main() -> None:
     absolute_difference = abs(drawn - ead)
     relative_difference = absolute_difference / abs(drawn) if drawn else None
     tolerances = {
-        "prod_recon_tol": _env_tolerance("prod"),
-        "uat_recon_tol": _env_tolerance("uat"),
-        "spec_section_8": 0.0001,
+        "prod_recon_tol": env_recon_tolerance("prod"),
+        "uat_recon_tol": env_recon_tolerance("uat"),
+        "spec_section_8": float(
+            dict(zip(table("recon_controls.csv").PARAM, table("recon_controls.csv").VALUE))[
+                "spec_section_8_tolerance"
+            ]
+        ),
     }
     tolerance_results = {}
     for name, tolerance in tolerances.items():

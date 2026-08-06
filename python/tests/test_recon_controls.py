@@ -76,6 +76,18 @@ def test_only_numeric_nan_stages_count_as_missing():
     assert result.null_stage_count == 1
 
 
+def test_none_and_pandas_missing_stages_count_as_missing():
+    # SAS missing includes None-like values in an object-dtype staging column.
+    tape, account = _frames(
+        stage=(None, pd.NA, 0, "", "NULL"),
+        drawn=(100, 200, 300, 400, 500),
+        ead=(100, 200, 300, 400, 500),
+        ecl=(1, 2, 3, 4, 5),
+    )
+    result = recon_controls(tape, account, now=NOW, emit=lambda _: None)
+    assert result.null_stage_count == 2
+
+
 def test_recon_controls_writes_no_file_or_dataset(tmp_path, monkeypatch):
     # The legacy unit is log-only and creates neither a dataset nor a file.
     monkeypatch.chdir(tmp_path)
@@ -106,11 +118,12 @@ def test_shuffled_rows_have_identical_control_line():
 
 def test_best12_cases():
     # BEST12. retains width, rounds values that cannot fit, and uses E notation.
+    # Exact SAS E-notation rendering is an untested assumption, unreachable by realistic control totals.
     assert best12(19) == "          19"
     assert best12(25392847.5599999998) == " 25392847.56"
     assert best12(-12.34) == "      -12.34"
     assert best12(None) == "           ."
-    assert best12(1e100) == "1.00000E+100"
+    assert best12(1e100) == "      1E+100"
 
 
 def test_engine_publishes_before_controls(tmp_path, capsys):

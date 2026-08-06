@@ -110,8 +110,13 @@ recorded with the regression run and must accompany the model change record.
   with `tools/recon_whatif.py`.
 * **BEST12 leading blanks assumption:** SQL `INTO` values are rendered
   with retained leading blanks under the documented BEST12. convention.
-  Cause: SAS SQL Procedure INTO documentation, not a captured log artifact.
-  Currency impact: none; this affects the log representation only. Decision
+  Cause: SAS Macro Language Dictionary, INTO clause — “Values assigned by
+  the INTO clause use the BEST12. format” and “:macro-variable ... Leading
+  and trailing blanks are not trimmed”; this is a documentation-based
+  assumption, not a captured log artifact. Width is configurable through
+  `recon_controls.csv:best12_width`. Currency impact: none; this affects
+  the log representation only. Exact SAS E-notation rendering is an
+  untested assumption, unreachable by realistic control totals. Decision
   required: accept behaviour-pinning tests as evidence; reproduce the
   rendering with `python/ecl/recon.py`.
 * **No captured legacy artifact for this unit:** evidence is

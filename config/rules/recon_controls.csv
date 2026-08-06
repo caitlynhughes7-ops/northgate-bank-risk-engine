@@ -5,3 +5,5 @@ default_env,uat
 best12_width,12
 best12_max_decimals,10
 best12_exponent_decimals,5
+# spec_section_8_tolerance is the specification candidate, not a legacy code value; recon.py never applies it.
+spec_section_8_tolerance,0.0001
