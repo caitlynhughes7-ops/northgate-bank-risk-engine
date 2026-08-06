@@ -51,3 +51,20 @@ without importing it into any calculation module.
 | out | `sas/autoexec.sas`, `libname out "&OUTBOUND"` | `Environment.out` | No specification basis |
 | hist | `sas/autoexec.sas`, `libname hist "&HISTLIB"` | `Environment.hist` | No specification basis |
 | Autocall path | `sas/autoexec.sas`, `options sasautos=("&BASE./sas/macros" sasautos)` | `Environment.autocall_path` | No specification basis |
+
+## Job orchestration lineage
+
+| Observable / artifact | Legacy source | Migrated implementation | Spec basis |
+|---|---|---|---|
+| Working directory (`sas/`) | `jobs/monthly_ecl.sh:14`, `cd "$(dirname "$0")/../sas"` | `ecl.job.run`, temporarily changes to `ROOT/sas` | No specification basis |
+| Log file path | `jobs/monthly_ecl.sh:21`, `../logs/ecl_${PERIOD}_${ENVN}.log` | `ecl.job._paths`, configured by `config/rules/job_orchestration.csv`; carries captured engine stdout/stderr and appended failure tracebacks | No specification basis |
+| Listing path convention | `jobs/monthly_ecl.sh:21`, `../logs/ecl_${PERIOD}_${ENVN}.lst` | `ecl.job._paths`; convention retained, no file fabricated because the Python engine has no print stream | No specification basis |
+| SYSparm ordering | `jobs/monthly_ecl.sh:18–19`, `-sysparm "$PERIOD $ENVN"` | `ecl.job.run`, passed to `ecl.environment.bootstrap` and consumed by `scan_sysparm_env` | No specification basis |
+| Stdout count line | `jobs/monthly_ecl.sh:23`, `grep -c '^ERROR'` | `ecl.job.run`, prints the configured line-start error count, including bare `0` | No specification basis |
+| Stdout success message | `jobs/monthly_ecl.sh:28`, `ECL run complete for $PERIOD ($ENVN)` | `ecl.job.run`, configured by `job_orchestration.csv` | No specification basis |
+| Stderr usage message | `jobs/monthly_ecl.sh:9–11`, `usage: $0 <YYYYMM> [prod|uat]` | `ecl.job.main`, configured by `job_orchestration.csv` | No specification basis |
+| Stderr error message | `jobs/monthly_ecl.sh:24`, `ECL run reported errors, see log` | `ecl.job.run`, configured by `job_orchestration.csv` | No specification basis |
+| Missing-argument exit code 2 | `jobs/monthly_ecl.sh:9–11` | `ecl.job.main`, configured by `job_orchestration.csv` | No specification basis |
+| Log-error exit code 1 | `jobs/monthly_ecl.sh:23–26` | `ecl.job.run`, configured by `job_orchestration.csv` | No specification basis |
+| Clean exit code 0 | `jobs/monthly_ecl.sh:23–28` | `ecl.job.run`, configured by `job_orchestration.csv` | No specification basis |
+| Engine-failure exit status | `jobs/monthly_ecl.sh:18` under `set -e` | `ecl.job.run`, generic nonzero code 1 because SAS-specific statuses do not exist in Python | No specification basis |

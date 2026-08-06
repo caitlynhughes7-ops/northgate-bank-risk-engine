@@ -136,3 +136,52 @@ decision**.
   legacy configuration channels. Consequence: there is no single source of
   truth. Decision required: Model Governance must choose an owner; this unit
   does not resolve the conflict.
+
+## Job orchestration unit (`GCRA_ECL_MONTHLY`)
+
+This unit has no captured legacy artifact, so behaviour-equivalence is the
+only evidence provided. No numeric parity is claimed: orchestration does not
+produce a captured numeric comparison artifact, and the Python engine is used
+only through its existing bootstrap and engine surfaces.
+
+* **Controls run after publication (EO-05):** Cause: the legacy driver
+  publishes disclosure and GL outputs before its controls, as described by
+  `docs/discovery/02_execution_order.md`. Consequence: a wrong number that
+  has already been published can still result in exit 0 unless SAS itself
+  logged an error. Decision required: decide whether controls must move before
+  publication.
+* **Missing log can report clean:** Cause: `jobs/monthly_ecl.sh` lines 23–27
+  place `grep -c` in an `&&` list exempt from `set -e`; a missing log makes
+  grep return 2, skips the error block, and reaches the success message.
+  Consequence: a run that produced no log can be reported clean, while grep's
+  diagnostic is printed to stderr. Decision required: decide whether a
+  missing log should become a hard failure.
+* **Bare `0` on stdout:** Cause: `grep -c '^ERROR'` on a clean log prints its
+  count before the success message (legacy line 23). Consequence: operator
+  stdout contains a cosmetic count line. Decision required: decide whether
+  downstream Control-M consumers depend on this line; it is preserved.
+* **No Python `.lst` print file:** Cause: the Python engine has no SAS print
+  stream. Consequence: the legacy listing path convention is preserved but no
+  listing is fabricated. Decision required: confirm the requirement with
+  Control-M/Infra Batch Services.
+* **No environment or period validation:** Cause: legacy lines 6–7 only
+  assign arguments and line 18 passes them through. Consequence: unknown
+  environment values and non-`YYYYMM` periods flow through, and trailing
+  arguments are ignored. Decision required: decide whether validation belongs
+  in a future contract change.
+* **SAS exit-status codes are not reproducible:** Cause: the migrated unit
+  invokes the Python engine rather than SAS, while legacy line 18 exposes
+  SAS-specific nonzero statuses. Consequence: engine failures return the
+  sensible generic nonzero code 1, not a SAS-specific code. Decision
+  required: define an operationally meaningful failure-code taxonomy if
+  Control-M distinguishes SAS status values.
+* **The migrated error scan is currently near-vacuous:** Cause: the Python
+  engine does not currently emit `ERROR:`-prefixed lines; structured log
+  emission (`%log_step`/`%assert_rows`) is a separate migration unit. The
+  migrated wrapper nevertheless captures engine stdout/stderr into the log
+  and applies the same `^ERROR` scan mechanism. Consequence: today the scan
+  can only fire on engine output that explicitly contains such a line (or
+  future structured logging), rather than on the engine's current normal
+  output; engine tracebacks are recorded in the log but do not themselves
+  begin with `ERROR:`. Decision required: decide where structured Python
+  error logging and control signalling will be owned.
