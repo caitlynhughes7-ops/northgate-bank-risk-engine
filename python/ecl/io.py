@@ -13,7 +13,9 @@ def write_outputs(out: pd.DataFrame, root: Path, period: str):
     export = out.copy()
     export["N_EXPOSURES"] = export["N_EXPOSURES"].astype(int).astype(str)
     for column in ["TOTAL_EAD", "TOTAL_ECL"]:
-        export[column] = export[column].map(lambda value: f"{value:.2f}")
+        export[column] = export[column].map(
+            lambda value: f"{value:.2f}".rstrip("0").rstrip(".")
+        )
     export["COVERAGE"] = export["COVERAGE"].map(
         lambda value: f"{value:.6f}".rstrip("0").rstrip(".")
     )

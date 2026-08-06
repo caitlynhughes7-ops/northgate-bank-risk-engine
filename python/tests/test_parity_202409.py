@@ -23,3 +23,20 @@ def test_parity_artifact_is_valid_json_and_one_sided_rows_are_failures():
     assert missing["COVERAGE"]["within_tolerance"] is None
     with open("data/output/parity_202409.json") as artifact:
         json.load(artifact)
+
+
+def test_unmapped_segment_key_is_json_safe():
+    expected = pd.DataFrame(
+        {
+            "SEGMENT": [None],
+            "STAGE": [1],
+            "N_EXPOSURES": [1],
+            "TOTAL_EAD": [10.0],
+            "TOTAL_ECL": [1.0],
+            "COVERAGE": [0.1],
+        }
+    )
+    actual = expected.copy()
+    rows = comparison_rows(expected, actual)
+    assert rows[0]["SEGMENT"] is None
+    json.dumps({"rows": rows}, allow_nan=False)

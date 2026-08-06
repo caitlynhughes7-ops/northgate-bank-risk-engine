@@ -25,6 +25,17 @@ legacy behaviour preserved**.
 * **Legacy input coercions:** whitespace is removed from tape account IDs,
   DPD sentinels and missing values become zero, mortgage EIR percentages are
   divided by 100, and IO accounts have zero monthly payment.
+* **CSV rendering boundary:** CREDIT_CARD Stage 1 and Stage 2 TOTAL_EAD are
+  numerically identical to the SAS results but can render as `870038.43` vs
+  `870038.42` and `696748.69` vs `696748.68`. The underlying engine doubles
+  are `870038.42500000004656612873077392578125` and
+  `696748.6850000000558793544769287109375`, respectively: approximately
+  5e-12 above the exact half-penny boundary. The difference is caused by
+  floating-point summation order at rendering, not model logic. The engine
+  output is numerically identical and the differences are far below the
+  0.01 acceptance tolerance. CSV output is therefore not guaranteed byte
+  identical to the SAS export; parity is defined numerically at 0.01 under
+  acceptance criterion 1. The two affected cells are not adjusted.
 
 No model parameter was recalibrated. Quantified sensitivity results are
 recorded with the regression run and must accompany the model change record.

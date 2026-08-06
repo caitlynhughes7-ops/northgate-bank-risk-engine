@@ -11,7 +11,9 @@ def comparison_rows(expected, actual):
     merged = expected.merge(actual, on=keys, how="outer", suffixes=("_EXPECTED", "_ACTUAL"), indicator=True)
     rows = []
     for r in merged.to_dict("records"):
-        row = {"SEGMENT": r["SEGMENT"], "STAGE": r["STAGE"], "present": r["_merge"] == "both"}
+        segment = None if pd.isna(r["SEGMENT"]) else r["SEGMENT"]
+        stage = None if pd.isna(r["STAGE"]) else r["STAGE"]
+        row = {"SEGMENT": segment, "STAGE": stage, "present": r["_merge"] == "both"}
         for col in ["N_EXPOSURES", "TOTAL_EAD", "TOTAL_ECL", "COVERAGE"]:
             e, a = r.get(col + "_EXPECTED"), r.get(col + "_ACTUAL")
             missing = pd.isna(e) or pd.isna(a)

@@ -10,9 +10,12 @@ def pd_pit(d: pd.DataFrame, scenarios: pd.DataFrame, weight_file: str | None = N
     s = s.merge(weights, on="SCENARIO", how="left").fillna({"WEIGHT": 0})
     scalar = (s.WEIGHT * (1 + float(p["macro_gdp_coefficient"]) * s.GDP_SHOCK + float(p["macro_unemployment_coefficient"]) * (s.UNEMP_RATE - float(p["macro_unemployment_base"])))).sum()
     grades = table("pd_grades.csv")
-    gm = dict(zip(grades.RATING_GRADE.astype(str), grades.PD_GRADE))
+    grade_rows = grades[grades.RATING_GRADE != "__DEFAULT__"]
+    gm = dict(zip(pd.to_numeric(grade_rows.RATING_GRADE), grade_rows.PD_GRADE))
+    default_pd = float(grades.loc[grades.RATING_GRADE == "__DEFAULT__", "PD_GRADE"].iloc[0])
     x = d.copy()
-    x["PD_GRADE"] = x.RATING_GRADE.astype(str).map(gm).fillna(dict(zip(grades.RATING_GRADE.astype(str), grades.PD_GRADE))["__DEFAULT__"])
+    numeric_grade = pd.to_numeric(x.RATING_GRADE, errors="coerce")
+    x["PD_GRADE"] = numeric_grade.map(gm).fillna(default_pd)
     x["PD_12M"] = (x.PD_GRADE * scalar).clip(upper=1)
     for bucket, name in [("1-29", "arrears_uplift_1_29"), ("30-59", "arrears_uplift_30_59"), ("60-89", "arrears_uplift_60_89")]:
         x.loc[x.ARREARS_BUCKET == bucket, "PD_12M"] = (x.loc[x.ARREARS_BUCKET == bucket, "PD_12M"] * float(p[name])).clip(upper=1)
