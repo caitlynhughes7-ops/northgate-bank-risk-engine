@@ -176,7 +176,7 @@ three inbound files the batch reads, both inside `%load_loan_tape` and `%pd_pit`
 
 The header of each file names its source system — for example
 `sas/etl/m_ext_valuation_feed.sas:4`, "Source system: Hometrack feed   Frequency:
-monthly". `docs/discovery/01_program_inventory.md:64-78` tabulates all fifteen: Reference
+monthly". `docs/discovery/01_program_inventory.md:64-80` tabulates all fifteen: Reference
 data, Tallyman, CIS (Hogan), Credit Risk, CaseWorks, SAP, mortgage servicing, Vision Plus,
 Economics (manual), the ECL engine itself, RiskCalc, Trust reporting and Hometrack.
 
@@ -268,7 +268,7 @@ These are not cosmetic. Each book applies material model adjustments: a PD multi
 between 0.96 and 1.43, an LGD multiplier between 0.93 and 1.29 with a book-specific LGD
 floor, a book-specific CCF between 0.45 and 0.90, and in several books a further quirk
 (`docs/discovery/04_never_invoked.md:85-93`; per-book factors tabulated at
-`docs/discovery/01_program_inventory.md:82-94`). Worked example, Stanmore
+`docs/discovery/01_program_inventory.md:86-99`). Worked example, Stanmore
 (`sas/macros/portfolio/m_ovr_stanmore.sas:12-27`): filter `BOOK_CD = "STANMORE"`, PD ×0.97,
 LGD ×1.13 floored at 0.10, CCF 0.45, and a rescale of `DRAWN_BAL` and `UNDRAWN` by 100 when
 `BAL_UNIT = 'P'` because "this book reports balances in pence on the legacy feed"
@@ -452,14 +452,14 @@ and the attestations.
 2. **The missing columns have a real derivation.** `REGION` and `ARREARS_BUCKET` exist
    earlier in the chain and are dropped at driver step 11; `SICR_REASON`, `DEFAULT_FL`,
    `FORBEARANCE_FL` and `PD_LIFETIME` are dropped at step 16
-   (`docs/discovery/04_never_invoked.md:120-128`), so those seven are recoverable in
+   (`docs/discovery/04_never_invoked.md:120-128`), so those six are recoverable in
    principle by not dropping them. `BOOK_CD` is not: it is never created anywhere, so the
    three reports that group by it and the six whose validators join on it are blocked
    behind section 3.
 3. **The filed submissions are actually produced by these programs.** If they are not
    (reading B of section 1), then porting this code produces reports that match nothing the
    bank has ever filed.
-4. Retaining the seven dropped columns through to a persisted account-level output is a
+4. Retaining the six dropped columns through to a persisted account-level output is a
    **behavioural change** to the migrated engine, and
    `docs/migration/TARGET.md:32-34` requires that behavioural changes be raised for
    decision rather than made quietly. `docs/discovery/03_lineage_secured_lgd.md:153-155`
@@ -484,7 +484,7 @@ and the attestations.
 
 ### 4.3 Who owns that evidence
 
-- **Four parties are named in the report sources themselves** as the owners of the control
+- **Five parties are named in the report sources themselves** as the owners of the control
   attestation each report is referenced in, and as the party that queries its prior-period
   variance. Each report names exactly one. This is the complete mapping:
 
@@ -509,7 +509,7 @@ and the attestations.
   (`README.md:6`, `docs/ops/RUNBOOK.md:24`) — subject to the caveat at
   `docs/ops/RUNBOOK.md:24-25` and `README.md:20-21,27-29` that the people and the
   documentation are largely gone.
-- **Model Governance** for approving the retention of dropped columns as a behavioural
+- **Model Governance** for approving the retention of the dropped columns as a behavioural
   change (`docs/ops/RUNBOOK.md:25`, `docs/migration/TARGET.md:26-29`).
 - **Internal Audit** is recorded as the consumer of `%rpt_audit_sample_extract`
   (`docs/discovery/01_program_inventory.md:107`, "for Internal Audit sampling") and as the
@@ -526,7 +526,7 @@ is not code volume but specification recovery.
 
 | | Estimate (Devin sessions, one migration unit per session) |
 |---|---|
-| Persist account-level ECL and retain the seven dropped columns, with parity re-established on the existing baseline | **2–3 sessions** |
+| Persist account-level ECL and retain the six recoverable dropped columns, with parity re-established on the existing baseline | **2–3 sessions** |
 | Port 20 reports *from the code as written* (not recommended — see below) | **7–10 sessions** |
 | Port 20 reports *from re-established specifications*, which is what 4.1(3) requires | **20–30 sessions**, roughly one to one and a half per report, and this assumes the specification arrives first |
 | Rebuild the 20 `_validate` prior-period controls and the `hist` archive, once there is a specification for what each control compares | **6–8 sessions** |
@@ -535,9 +535,10 @@ is not code volume but specification recovery.
 Drivers that would make it larger: the nine reports blocked behind `BOOK_CD`, which cannot
 start until section 3 resolves; any report whose filed figure turns out not to be derivable
 from account-level ECL at all (CR1 today is exactly this case —
-`docs/discovery/03_lineage_secured_lgd.md:147-152`); and the fact that thirty of the sixty
-macros here (`_validate` and `_archive`) have never run, so there is no legacy behaviour to
-be faithful to.
+`docs/discovery/03_lineage_secured_lgd.md:147-152`); and the fact that **none of the sixty
+macros here has ever run** — forty of them, the `_validate` and `_archive` siblings, could
+not run even if invoked (`docs/discovery/04_never_invoked.md:9-11`, `:101-109`) — so there
+is no legacy behaviour to be faithful to.
 
 That last point is the important one for budget, and it recurs in the recommendation:
 **for code with no captured output, there is nothing to be parity-tested against.**
@@ -638,8 +639,8 @@ never executed, and joins on columns that do not exist — and it could not be e
 only captured legacy output the programme holds is the segment-level CSV for 202409
 (`docs/migration/TARGET.md:48-49`). **No captured legacy output for any of the 113
 definitions in this document is present in this repository** — on the evidence here the
-ETL guards have never run, the override books have never been applied, and thirty of the
-sixty report macros have never executed at all. (What may have executed in a production
+ETL guards have never run, the override books have never been applied, and none of the
+sixty report macros has ever executed. (What may have executed in a production
 deployment outside this repository is section 1's question, and is exactly why that
 question comes first.)
 
@@ -666,7 +667,7 @@ guessed at.
    mapping in 4.3) — but no ownership document names any of them. Owner not named in the
    repository.
 4. **Who owns each inbound source system?** Thirteen distinct systems are named in file
-   headers and `docs/discovery/01_program_inventory.md:64-78`. Economics is the only
+   headers and `docs/discovery/01_program_inventory.md:64-80`. Economics is the only
    source-related function named in the documentation, and it is named for macro-scenario
    sign-off (`docs/ops/RUNBOOK.md:7`) rather than explicitly as the owner of an inbound
    source system. Owners not named in the repository.
