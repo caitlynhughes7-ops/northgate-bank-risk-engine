@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
 from typing import Callable, Mapping
+from weakref import finalize
 
 from . import formats
 from .config import table
@@ -95,9 +96,12 @@ class Environment:
     autocall_path: Path
     base: Path
     note: str
+    _stg_finalizer: finalize | None = None
 
     def close(self) -> None:
-        if self.stg.persistence == "ephemeral":
+        if self._stg_finalizer is not None:
+            self._stg_finalizer()
+        elif self.stg.persistence == "ephemeral":
             rmtree(self.stg.path, ignore_errors=True)
 
     def __enter__(self) -> Environment:
@@ -148,17 +152,23 @@ def bootstrap(sysparm: str = "", base: Path | None = None) -> Environment:
         raise EnvironmentBootstrapError(f"Environment config {cfg_path} is missing: {', '.join(missing)}")
     settings = EnvironmentSettings(*(config[key] for key in required))
     stg_path = Path(tempfile.mkdtemp(prefix="ecl-stg-"))
-    library_rows = table("env_libraries.csv").to_dict("records")
-    libraries = {
-        str(row["LIBREF"]): _library(row, settings, stg_path) for row in library_rows
-    }
-    return Environment(
-        settings=settings,
-        raw=libraries["raw"],
-        stg=libraries["stg"],
-        out=libraries["out"],
-        hist=libraries["hist"],
-        autocall_path=root / rules["autocall_macro_dir"],
-        base=root,
-        note=f"NOTE: ECL engine initialised for environment {settings.env}",
-    )
+    try:
+        library_rows = table("env_libraries.csv").to_dict("records")
+        libraries = {
+            str(row["LIBREF"]): _library(row, settings, stg_path) for row in library_rows
+        }
+        environment = Environment(
+            settings=settings,
+            raw=libraries["raw"],
+            stg=libraries["stg"],
+            out=libraries["out"],
+            hist=libraries["hist"],
+            autocall_path=root / rules["autocall_macro_dir"],
+            base=root,
+            note=f"NOTE: ECL engine initialised for environment {settings.env}",
+        )
+        environment._stg_finalizer = finalize(environment, rmtree, stg_path, True)
+        return environment
+    except BaseException:
+        rmtree(stg_path, ignore_errors=True)
+        raise

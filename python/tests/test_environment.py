@@ -1,4 +1,5 @@
 from pathlib import Path
+from gc import collect
 
 import pytest
 
@@ -73,6 +74,23 @@ def test_stg_is_ephemeral_and_distinct_per_bootstrap() -> None:
     second.close()
     assert not first_path.exists()
     assert not second_path.exists()
+
+
+def test_stg_is_removed_when_environment_is_garbage_collected() -> None:
+    environment = bootstrap(base=ROOT)
+    stg_path = environment.stg.path
+    assert stg_path.is_dir()
+    del environment
+    collect()
+    assert not stg_path.exists()
+
+
+def test_close_is_idempotent() -> None:
+    environment = bootstrap(base=ROOT)
+    stg_path = environment.stg.path
+    environment.close()
+    environment.close()
+    assert not stg_path.exists()
 
 
 def test_hist_is_assigned_but_unused_by_batch() -> None:
