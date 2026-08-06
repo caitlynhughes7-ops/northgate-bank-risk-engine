@@ -57,7 +57,7 @@ without importing it into any calculation module.
 | Observable / artifact | Legacy source | Migrated implementation | Spec basis |
 |---|---|---|---|
 | Working directory (`sas/`) | `jobs/monthly_ecl.sh:14`, `cd "$(dirname "$0")/../sas"` | `ecl.job.run`, temporarily changes to `ROOT/sas` | No specification basis |
-| Log file path | `jobs/monthly_ecl.sh:21`, `../logs/ecl_${PERIOD}_${ENVN}.log` | `ecl.job._paths`, configured by `config/rules/job_orchestration.csv`; carries captured engine stdout/stderr and appended failure tracebacks | No specification basis |
+| Log file path | `jobs/monthly_ecl.sh:21`, `../logs/ecl_${PERIOD}_${ENVN}.log` | `ecl.job._paths`, configured by `config/rules/job_orchestration.csv`; replaces the prior log at invocation start, then carries captured engine stdout/stderr and appended failure tracebacks | No specification basis |
 | Listing path convention | `jobs/monthly_ecl.sh:21`, `../logs/ecl_${PERIOD}_${ENVN}.lst` | `ecl.job._paths`; convention retained, no file fabricated because the Python engine has no print stream | No specification basis |
 | SYSparm ordering | `jobs/monthly_ecl.sh:18–19`, `-sysparm "$PERIOD $ENVN"` | `ecl.job.run`, passed to `ecl.environment.bootstrap` and consumed by `scan_sysparm_env` | No specification basis |
 | Stdout count line | `jobs/monthly_ecl.sh:23`, `grep -c '^ERROR'` | `ecl.job.run`, prints the configured line-start error count, including bare `0` | No specification basis |

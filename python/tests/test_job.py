@@ -107,6 +107,32 @@ def test_empty_log_is_clean_and_prints_bare_zero(
     assert stderr.getvalue() == ""
 
 
+def test_each_run_replaces_stale_log_contents(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(job, "ROOT", tmp_path)
+    monkeypatch.setattr(job, "bootstrap", lambda *a, **k: _Bootstrap())
+    calls = 0
+
+    def fake_engine(period: str, root: Path):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            print("ERROR: first run failure")
+
+    monkeypatch.setattr(job.engine, "run", fake_engine)
+    first_stdout, first_stderr = StringIO(), StringIO()
+    assert job.run("202409", "uat", stdout=first_stdout, stderr=first_stderr) == 1
+    assert first_stdout.getvalue() == "1\n"
+    assert first_stderr.getvalue() == "ECL run reported errors, see log\n"
+
+    second_stdout, second_stderr = StringIO(), StringIO()
+    assert job.run("202409", "uat", stdout=second_stdout, stderr=second_stderr) == 0
+    assert second_stdout.getvalue() == "0\nECL run complete for 202409 (uat)\n"
+    assert second_stderr.getvalue() == ""
+    assert (tmp_path / "logs" / "ecl_202409_uat.log").read_text() == ""
+
+
 def test_missing_log_matches_set_e_exemption_and_reports_clean(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

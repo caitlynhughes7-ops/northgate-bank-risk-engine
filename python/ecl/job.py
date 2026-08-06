@@ -75,7 +75,7 @@ def run(
     rules = _rules()
     log_path, _listing_path = _paths(period, env, rules)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.touch()
+    log_path.open("w").close()
     sysparm = rules["sysparm_template"].format(period=period, env=env)
     try:
         work_dir = ROOT / rules["working_dir"]
