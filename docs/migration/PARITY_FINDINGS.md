@@ -46,3 +46,42 @@ legacy behaviour preserved**.
 
 No model parameter was recalibrated. Quantified sensitivity results are
 recorded with the regression run and must accompany the model change record.
+
+* **Omitted log message spacing:** `%log_step` preserves a double space before
+  the timestamp parenthesis when `msg` is omitted. The Python port preserves
+  this legacy behaviour. Cause: the macro template includes both the step
+  separator and the empty message separator. Consequence: log lines are not
+  normalized whitespace. Decision required: none for this migration; retain
+  the legacy rendering.
+* **Log severity contract:** `%log_step` always emits `NOTE:` regardless of
+  step or message content, and `%put ERROR:` does not fail the batch; only
+  `%assert_rows` aborts (EO-08), so the shell's `^ERROR` grep is the only
+  failure signal. The Python port preserves the legacy behaviour. Cause:
+  severity is fixed by the `%log_step` template. Consequence: operational
+  failure detection must not infer errors from arbitrary log-step text.
+  Decision required: confirm this operational contract remains acceptable.
+* **Datetime rendering assumptions:** `datetime20.` fractional seconds are
+  truncated and `%sysfunc` leading blanks are trimmed. The Python port
+  preserves the legacy behaviour. Cause: documented SAS datetime formatting
+  behaviour, not a captured log artifact. Consequence: these details remain
+  assumptions for review. Decision required: Model Governance should confirm
+  the assumptions.
+* **No captured logging artifact:** no captured legacy log artifact exists for
+  this unit. The Python port preserves the legacy behaviour. Cause: the
+  migration evidence is source behaviour rather than a captured SAS log.
+  Consequence: no numeric parity claim is made for this unit; evidence is
+  behaviour-pinning tests. Decision required: accept behaviour-pinning tests
+  as the evidence basis.
+* **Macro-parameter blank trimming:** SAS macro-parameter leading and trailing
+  blanks are stripped while internal spacing is preserved. The Python port
+  preserves the legacy behaviour. Cause: unquoted macro-parameter resolution.
+  Consequence: surrounding whitespace supplied by callers is not rendered.
+  Decision required: none for this migration; retain the legacy rendering.
+* **OPEN ESCALATION — Python log destination:** the Python engine has no SAS
+  log file. This port writes to stdout, while `jobs/monthly_ecl.sh` greps a
+  SAS `-log` file. Cause: the Python runtime and SAS batch have different log
+  sinks. Consequence: the operational logging contract for the Python run
+  (destination/log file, and whether the timestamp should stay local-clock
+  naive as SAS `datetime()` is) is unresolved. Decision required: Model
+  Governance / Ops must decide the destination and timestamp policy; this
+  migration does not resolve it.

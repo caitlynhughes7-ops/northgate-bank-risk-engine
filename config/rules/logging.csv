@@ -1,0 +1,4 @@
+PARAM,VALUE
+log_note_prefix,NOTE:
+log_tag,[ECL]
+log_timestamp_format,datetime20

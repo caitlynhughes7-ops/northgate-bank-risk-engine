@@ -1,7 +1,9 @@
 import pandas as pd
 from .config import params
+from .util_logging import log_step
 
 def calculate(exposure: pd.DataFrame, curve: pd.DataFrame) -> pd.DataFrame:
+    log_step("ecl_calc")
     horizon = int(float(params()["stage_1_horizon_m"]))
     c = curve.merge(exposure[["ACCOUNT_ID", "STAGE", "LGD", "EAD", "OVERLAY_FACTOR", "SEGMENT"]], on="ACCOUNT_ID", how="inner")
     c = c[(c["STAGE"] != 1) | (c["T"] <= horizon)]

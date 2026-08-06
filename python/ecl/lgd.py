@@ -1,7 +1,9 @@
 import pandas as pd
 from .config import table, params
+from .util_logging import log_step
 
 def secured(d: pd.DataFrame, collateral: pd.DataFrame, haircut_overrides: dict[int, float] | None = None) -> pd.DataFrame:
+    log_step("lgd_secured")
     x = d[d.SECURED_FLAG == "Y"].copy()
     c = collateral.copy()
     c["ACCOUNT_ID"] = c.ACCOUNT_ID.astype("string").str.replace(r"\s+", "", regex=True)
@@ -24,6 +26,7 @@ def secured(d: pd.DataFrame, collateral: pd.DataFrame, haircut_overrides: dict[i
     return x
 
 def unsecured(d: pd.DataFrame) -> pd.DataFrame:
+    log_step("lgd_unsecured")
     x = d[d.SECURED_FLAG != "Y"].copy()
     vals = dict(zip(table("lgd_unsecured.csv").SEGMENT, table("lgd_unsecured.csv").LGD_RAW))
     default = vals["__DEFAULT__"]

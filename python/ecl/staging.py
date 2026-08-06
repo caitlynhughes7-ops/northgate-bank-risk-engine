@@ -1,7 +1,9 @@
 import pandas as pd
 from .config import params, table
+from .util_logging import log_step
 
 def stage(d: pd.DataFrame) -> pd.DataFrame:
+    log_step("staging_sicr")
     p = params()
     x = d.merge(table("sicr_thresholds.csv"), on="SEGMENT", how="left")
     x["REL_PD_MULT"] = x.REL_PD_MULT.fillna(float(p["sicr_default_rel_pd_mult"]))
