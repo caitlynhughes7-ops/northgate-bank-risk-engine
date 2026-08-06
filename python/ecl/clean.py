@@ -1,6 +1,8 @@
 import pandas as pd
+from .util_logging import log_step
 
 def clean(tape: pd.DataFrame) -> pd.DataFrame:
+    log_step("clean_loan_tape")
     d = tape.copy()
     d["ACCOUNT_ID"] = d["ACCOUNT_ID"].astype("string").str.replace(r"\s+", "", regex=True)
     d["DRAWN_BAL"] = d["DRAWN_BAL"].fillna(0)

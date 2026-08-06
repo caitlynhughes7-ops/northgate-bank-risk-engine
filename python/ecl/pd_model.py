@@ -1,7 +1,9 @@
 import pandas as pd
 from .config import table, params
+from .util_logging import log_step
 
 def pd_pit(d: pd.DataFrame, scenarios: pd.DataFrame, weight_file: str | None = None) -> pd.DataFrame:
+    log_step("pd_pit")
     p = params()
     wf = weight_file or ("scenario_weights_frozen_v43.csv" if p["active_scenario_weights"] == "frozen_v43" else "scenario_weights.csv")
     weights = table(wf)
@@ -24,6 +26,7 @@ def pd_pit(d: pd.DataFrame, scenarios: pd.DataFrame, weight_file: str | None = N
     return x
 
 def term_structure(d: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    log_step("pd_term_structure")
     cap = int(float(params()["max_term_m"]))
     curves = []
     for row in d.itertuples(index=False):

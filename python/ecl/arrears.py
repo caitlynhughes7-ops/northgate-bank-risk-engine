@@ -1,7 +1,9 @@
 import pandas as pd
 from .config import params
+from .util_logging import log_step
 
 def derive_arrears(d: pd.DataFrame) -> pd.DataFrame:
+    log_step("derive_arrears")
     p = params()
     threshold = float(p["arrears_part_month_threshold"])
     x = d.copy()

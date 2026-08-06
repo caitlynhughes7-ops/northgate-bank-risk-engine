@@ -23,3 +23,13 @@ explicitly retained for parity: the v4.3 frozen scenario weights, the BTL
 haircut code mismatch, the KI-041 personal-loan discount formula, and the
 specific uplift, overlay, CCF and PD masterscale values embedded in later SAS
 macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
+
+## Operational logging lineage
+
+| Log NOTE component | Source | Python / SAS implementation | Spec basis |
+|---|---|---|---|
+| Severity prefix | `config/rules/logging.csv` (`log_note_prefix`) | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+| `[ECL]` tag | `config/rules/logging.csv` (`log_tag`) | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+| Step token | Python caller | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+| Message token | Python caller | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+| Timestamp | System clock (`datetime.now()` by default) | `util_logging.py` / `m_util_logging.sas` | no specification basis |
