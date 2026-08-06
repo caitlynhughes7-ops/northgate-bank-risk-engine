@@ -1,0 +1,9 @@
+PARAM,VALUE
+sas_epoch,1960-01-01
+month_alignment,e
+prior_month_offset,-1
+prior_period_format,yymmn6
+period_year_start,1
+period_year_length,4
+period_month_start,5
+period_month_length,2

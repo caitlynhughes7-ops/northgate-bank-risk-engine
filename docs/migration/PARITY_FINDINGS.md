@@ -46,3 +46,24 @@ legacy behaviour preserved**.
 
 No model parameter was recalibrated. Quantified sensitivity results are
 recorded with the regression run and must accompany the model change record.
+
+## Period dates (`%period_dates`)
+
+* **No numeric parity claim:** no captured legacy artifact exists for this
+  unit, so no numeric parity claim is possible. **Consequence:** this is a
+  behaviour-equivalence port only. **Decision required:** none until a legacy
+  artifact is available.
+* **Malformed or out-of-range periods:** SAS `mdy()` missing-value propagation
+  was not verifiable without a SAS session. **Consequence:** the port raises
+  `UnsupportedPeriodError` instead of guessing. **Decision required:**
+  **ESCALATION** on the desired missing-value rendering.
+* **Unformatted reporting date:** `RPT_DT_SAS` is an unformatted SAS date
+  serial in the macro symbol table. **Consequence:** the log prints the
+  serial number, not an ISO date. **Decision required:** none; preserve the
+  legacy representation.
+* **`%substr` truncation:** characters beyond position 6 are ignored when
+  deriving dates. **Consequence:** `RPT_DT` can disagree with the derived
+  dates. **Decision required:** none; preserve this legacy quirk.
+* **Prior-period consumer scope:** `PRIOR_YYYYMM` is consumed only by the
+  never-invoked report layer (see `04_never_invoked.md`). **Consequence:** the
+  ported value has no live consumer. **Decision required:** none.

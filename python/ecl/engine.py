@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 import pandas as pd
 from .io import load_period, write_outputs
 from .clean import clean
@@ -12,6 +13,9 @@ from .overlay import apply_overlay
 from .discount import discount
 from .ecl import calculate
 from .aggregate import aggregate
+from .period_dates import period_dates
+
+logger = logging.getLogger(__name__)
 
 def run(
     period: str,
@@ -20,6 +24,12 @@ def run(
     haircut_overrides: dict[int, float] | None = None,
     write: bool = True,
 ):
+    dates = period_dates(period)
+    logger.info(
+        "NOTE: [ECL] reporting date %s prior period %s",
+        dates.RPT_DT_SAS_SERIAL,
+        dates.PRIOR_YYYYMM,
+    )
     root = root or Path(__file__).resolve().parents[2]
     tape, collateral, scenarios = load_period(root, period)
     x = ead_ccf(derive_arrears(map_products(clean(tape))))
