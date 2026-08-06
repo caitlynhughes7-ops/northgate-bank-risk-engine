@@ -145,9 +145,12 @@ def test_series_formats_float_promoted_grades():
     pd.testing.assert_series_equal(grades, original)
 
 
-@pytest.mark.parametrize("value", [0, 16, 16.0, 20.5])
-def test_grade_unmatched_numeric_has_no_catch_all_label(value):
-    assert grade_label(value) == str(value).removesuffix(".0")
+@pytest.mark.parametrize(
+    ("value", "label"),
+    [(0, "0"), (16, "16"), (16.0, "16"), (20.5, "20.5"), (-1, "-1")],
+)
+def test_grade_unmatched_numeric_has_no_catch_all_label(value, label):
+    assert grade_label(value) == label
 
 
 @pytest.mark.parametrize("value", [None, float("nan"), "", "not-a-grade"])

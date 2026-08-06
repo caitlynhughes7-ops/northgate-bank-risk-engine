@@ -86,7 +86,7 @@ decision.
   without Model Governance approval” and were copied byte-for-byte; legacy
   behaviour preserved, raised for Model Governance decision.
 * **Padding and alignment:** Python returns labels unpadded, whereas SAS
-  `put()` right-pads/aligns to the format width (6, the longest label). This is
-  consistent with the migrated `$seg.`/`stage.` unit and is a known
-  presentation difference; legacy behaviour preserved, raised for Model
-  Governance decision.
+  `put()` pads/aligns the result to the format width (6, the longest label).
+  This is a known presentation difference rather than preserved legacy
+  behaviour, and follows the convention already set by the migrated
+  `$seg.`/`stage.` unit; raised for Model Governance decision.
