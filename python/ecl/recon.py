@@ -17,7 +17,7 @@ class ReconControlsResult:
     ead: float | None
     ecl: float | None
     null_stage_count: int
-    recon_tolerance_loaded: float
+    recon_tolerance_loaded: float | None
     recon_tolerance_applied: bool = False
 
 
@@ -132,8 +132,11 @@ def recon_controls(
 ) -> ReconControlsResult:
     params = _params()
     selected_env = env or params["default_env"]
-    tolerance = env_recon_tolerance(selected_env)
     log_step("recon_controls", now=now, emit=emit)
+    try:
+        tolerance = env_recon_tolerance(selected_env)
+    except (FileNotFoundError, ValueError):
+        tolerance = None
 
     drawn = _sas_sum(tape, "DRAWN_BAL")
     ead = _sas_sum(ecl_acct, "EAD")

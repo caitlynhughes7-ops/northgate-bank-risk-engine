@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from ecl.engine import run
+import ecl.recon as recon_module
 from ecl.recon import best12, recon_controls
 
 
@@ -105,6 +106,29 @@ def test_recon_tolerance_is_loaded_but_not_applied():
         assert result.recon_tolerance_loaded == expected
         assert result.recon_tolerance_applied is False
         assert not any(token in "\n".join(lines) for token in ("PASS", "FAIL", "comparison"))
+
+
+def test_unknown_env_keeps_log_only_control_non_failing():
+    # Missing environment configuration cannot abort the legacy log-only unit.
+    tape, account = _frames()
+    lines = []
+    result = recon_controls(tape, account, env="unknown", now=NOW, emit=lines.append)
+    assert result.recon_tolerance_loaded is None
+    assert len(lines) == 2
+
+
+def test_missing_recon_tolerance_keeps_log_only_control_non_failing(monkeypatch):
+    # An environment without RECON_TOL still emits both legacy log lines.
+    tape, account = _frames()
+
+    def missing_tolerance(_):
+        raise ValueError("RECON_TOL is not defined")
+
+    monkeypatch.setattr(recon_module, "env_recon_tolerance", missing_tolerance)
+    lines = []
+    result = recon_controls(tape, account, env="uat", now=NOW, emit=lines.append)
+    assert result.recon_tolerance_loaded is None
+    assert len(lines) == 2
 
 
 def test_shuffled_rows_have_identical_control_line():

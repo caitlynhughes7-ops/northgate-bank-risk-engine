@@ -89,6 +89,8 @@ recorded with the regression run and must accompany the model change record.
   `DRAWN_BAL`, `EAD`, and `ECL`, but never compares the totals. `RECON_TOL`
   is loaded from the environment and unused, despite the v4.7 changelog
   saying that the tolerance was widened; there is no tolerance to widen.
+  The tolerance is read for evidence only; if it is absent or unavailable,
+  the log-only control records no loaded value and cannot fail the run.
   On 202409, the what-if comparison is **£912,115.62** (relative
   **0.251201%**) and fails PROD (0.05%, currency excess **£730,564.69**)
   and spec §8 (0.01%, excess **£875,805.44**) but passes UAT (0.5%).
