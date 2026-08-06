@@ -159,7 +159,10 @@ def test_missing_log_directory_aborts_before_engine(
     )
     assert called is False
     assert stdout.getvalue() == ""
-    assert stderr.getvalue() == ""
+    assert (
+        stderr.getvalue()
+        == "unable to open log ../logs/ecl_202409_uat.log: No such file or directory\n"
+    )
 
 
 def test_missing_log_matches_set_e_exemption_and_reports_clean(

@@ -182,8 +182,10 @@ library paths actually drive the engine's I/O.
   sensible generic nonzero code 1, not a SAS-specific code; likewise, failure
   to open a log because its directory is absent aborts before the engine with
   that generic code, matching legacy's `set -e` abort before the scan.
-  Decision required: define an operationally meaningful failure-code taxonomy
-  if Control-M distinguishes SAS status values.
+  The migrated job emits a path-bearing open failure diagnostic, but SAS's
+  exact wording and exit status are not reproducible. Decision required:
+  define an operationally meaningful failure-code taxonomy if Control-M
+  distinguishes SAS status values.
 * **The migrated error scan is currently near-vacuous:** Cause: the Python
   engine does not currently emit `ERROR:`-prefixed lines; structured log
   emission (`%log_step`/`%assert_rows`) is a separate migration unit. The

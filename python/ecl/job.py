@@ -76,7 +76,15 @@ def run(
     log_path, _listing_path = _paths(period, env, rules)
     try:
         log_path.open("w").close()
-    except OSError:
+    except OSError as error:
+        relative_path = Path(os.path.relpath(log_path, ROOT / rules["working_dir"]))
+        detail = error.strerror if error.strerror else str(error)
+        print(
+            rules["log_open_error_template"].format(
+                path=relative_path, detail=detail
+            ),
+            file=stderr,
+        )
         return int(rules["exit_error"])
     sysparm = rules["sysparm_template"].format(period=period, env=env)
     try:
