@@ -14,3 +14,11 @@ arrears_part_month_threshold,0.001
 sicr_default_rel_pd_mult,2.0
 sicr_default_abs_pd_incr,0.01
 sicr_default_dpd_trigger,30
+arrears_bucket_1_29_min,1
+arrears_bucket_1_29_max,29
+arrears_bucket_30_59_min,30
+arrears_bucket_30_59_max,59
+arrears_bucket_60_89_min,60
+arrears_bucket_60_89_max,89
+arrears_bucket_90_plus_min,90
+staging_default_dpd,90

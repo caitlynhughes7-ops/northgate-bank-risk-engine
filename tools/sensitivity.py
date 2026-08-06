@@ -1,6 +1,8 @@
 from pathlib import Path
 import json
 
+import pandas as pd
+
 from ecl.config import table
 from ecl.engine import run
 
@@ -19,16 +21,22 @@ def _deltas(baseline, variant):
     ).fillna(merged["TOTAL_ECL_VARIANT"]).fillna(-merged["TOTAL_ECL_BASELINE"])
     rows = []
     for row in merged.to_dict("records"):
+        baseline_total = None if merged_value_missing(row["TOTAL_ECL_BASELINE"]) else row["TOTAL_ECL_BASELINE"]
+        variant_total = None if merged_value_missing(row["TOTAL_ECL_VARIANT"]) else row["TOTAL_ECL_VARIANT"]
         rows.append(
             {
-                "SEGMENT": row["SEGMENT"],
-                "STAGE": row["STAGE"],
-                "baseline_total_ecl": row["TOTAL_ECL_BASELINE"],
-                "variant_total_ecl": row["TOTAL_ECL_VARIANT"],
-                "delta_total_ecl": row["TOTAL_ECL_DELTA"],
+                "SEGMENT": None if pd.isna(row["SEGMENT"]) else row["SEGMENT"],
+                "STAGE": None if pd.isna(row["STAGE"]) else row["STAGE"],
+                "baseline_total_ecl": baseline_total,
+                "variant_total_ecl": variant_total,
+                "delta_total_ecl": None if merged_value_missing(row["TOTAL_ECL_DELTA"]) else row["TOTAL_ECL_DELTA"],
             }
         )
     return rows, float(merged["TOTAL_ECL_DELTA"].sum())
+
+
+def merged_value_missing(value):
+    return value is None or bool(pd.isna(value))
 
 
 def main() -> None:
@@ -62,7 +70,7 @@ def main() -> None:
         },
     }
     (ROOT / "data/output/sensitivity_202409.json").write_text(
-        json.dumps(artifact, indent=2)
+        json.dumps(artifact, indent=2, allow_nan=False)
     )
 
 

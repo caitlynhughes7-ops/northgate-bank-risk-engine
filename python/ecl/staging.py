@@ -9,7 +9,7 @@ def stage(d: pd.DataFrame) -> pd.DataFrame:
     x["DPD_TRIGGER"] = x.DPD_TRIGGER.fillna(float(p["sicr_default_dpd_trigger"]))
     x["STAGE"] = 1
     x["SICR_REASON"] = "NONE"
-    mask = x.DEFAULT_FL | (x.DPD_N >= 90)
+    mask = x.DEFAULT_FL | (x.DPD_N >= float(p["staging_default_dpd"]))
     x.loc[mask, ["STAGE", "SICR_REASON"]] = [3, "IMPAIRED"]
     mask = (x.STAGE == 1) & (x.DPD_N >= x.DPD_TRIGGER)
     x.loc[mask, ["STAGE", "SICR_REASON"]] = [2, "DPD"]

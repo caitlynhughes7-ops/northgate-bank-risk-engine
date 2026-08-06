@@ -78,6 +78,22 @@ def test_gl_feed_record_layout(tmp_path):
     assert line[20] == "2"
     assert line[21:] == f"{12.3:18.2f}"
 
+
+def test_gl_feed_unmapped_segment_is_blank(tmp_path):
+    out = pd.DataFrame(
+        {
+            "SEGMENT": [None],
+            "STAGE": [1],
+            "N_EXPOSURES": [1],
+            "TOTAL_EAD": [100.0],
+            "TOTAL_ECL": [12.3],
+            "COVERAGE": [0.123],
+        }
+    )
+    write_outputs(out, tmp_path, "202409")
+    line = (tmp_path / "data/output/ECL_GL_FEED_202409.txt").read_text().rstrip("\n")
+    assert line[:20] == " " * 20
+
 def test_staging_precedence():
     d = pd.DataFrame({"SEGMENT": ["PERSONAL_LOAN"], "DEFAULT_FL": [True], "DPD_N": [0], "FORBEARANCE_FL": [False], "WATCHLIST_FL": [True], "PD_LIFETIME": [0.5], "PD_LIFETIME_ORIG": [0.01]})
     assert stage(d).STAGE.iloc[0] == 3

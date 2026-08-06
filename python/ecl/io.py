@@ -22,5 +22,6 @@ def write_outputs(out: pd.DataFrame, root: Path, period: str):
     export.to_csv(path / f"ecl_by_segment_{period}.csv", index=False)
     with (path / f"ECL_GL_FEED_{period}.txt").open("w") as f:
         for r in out.itertuples(index=False):
-            segment = str(r.SEGMENT)[:20].ljust(20)
+            segment = "" if pd.isna(r.SEGMENT) else str(r.SEGMENT)[:20]
+            segment = segment.ljust(20)
             f.write(f"{segment}{int(r.STAGE):01d}{r.TOTAL_ECL:18.2f}\n")
