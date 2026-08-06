@@ -179,9 +179,11 @@ library paths actually drive the engine's I/O.
 * **SAS exit-status codes are not reproducible:** Cause: the migrated unit
   invokes the Python engine rather than SAS, while legacy line 18 exposes
   SAS-specific nonzero statuses. Consequence: engine failures return the
-  sensible generic nonzero code 1, not a SAS-specific code. Decision
-  required: define an operationally meaningful failure-code taxonomy if
-  Control-M distinguishes SAS status values.
+  sensible generic nonzero code 1, not a SAS-specific code; likewise, failure
+  to open a log because its directory is absent aborts before the engine with
+  that generic code, matching legacy's `set -e` abort before the scan.
+  Decision required: define an operationally meaningful failure-code taxonomy
+  if Control-M distinguishes SAS status values.
 * **The migrated error scan is currently near-vacuous:** Cause: the Python
   engine does not currently emit `ERROR:`-prefixed lines; structured log
   emission (`%log_step`/`%assert_rows`) is a separate migration unit. The

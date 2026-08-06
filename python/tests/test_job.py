@@ -11,6 +11,7 @@ from ecl import job
 @pytest.fixture(autouse=True)
 def sas_directory(tmp_path: Path) -> None:
     (tmp_path / "sas").mkdir()
+    (tmp_path / "logs").mkdir()
 
 
 class _Bootstrap:
@@ -132,6 +133,33 @@ def test_each_run_replaces_stale_log_contents(
     assert second_stdout.getvalue() == "0\nECL run complete for 202409 (uat)\n"
     assert second_stderr.getvalue() == ""
     assert (tmp_path / "logs" / "ecl_202409_uat.log").read_text() == ""
+
+
+def test_missing_log_directory_aborts_before_engine(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(job, "ROOT", tmp_path)
+    (tmp_path / "logs").rmdir()
+    called = False
+
+    def fake_engine(period: str, root: Path):
+        nonlocal called
+        called = True
+
+    stdout, stderr = StringIO(), StringIO()
+    assert (
+        job.run(
+            "202409",
+            "uat",
+            run_engine=fake_engine,
+            stdout=stdout,
+            stderr=stderr,
+        )
+        == 1
+    )
+    assert called is False
+    assert stdout.getvalue() == ""
+    assert stderr.getvalue() == ""
 
 
 def test_missing_log_matches_set_e_exemption_and_reports_clean(

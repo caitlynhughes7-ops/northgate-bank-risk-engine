@@ -74,8 +74,10 @@ def run(
     """Run the configured engine and preserve the legacy shell signalling."""
     rules = _rules()
     log_path, _listing_path = _paths(period, env, rules)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.open("w").close()
+    try:
+        log_path.open("w").close()
+    except OSError:
+        return int(rules["exit_error"])
     sysparm = rules["sysparm_template"].format(period=period, env=env)
     try:
         work_dir = ROOT / rules["working_dir"]
