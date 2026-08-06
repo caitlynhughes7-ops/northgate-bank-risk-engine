@@ -69,7 +69,28 @@ def test_log_step_default_sink_writes_one_line_to_stdout(capsys):
 
 def test_engine_logs_legacy_steps_in_driver_order(capsys):
     run("202409", ROOT)
-    names = [line.split(" ")[2] for line in capsys.readouterr().out.splitlines()]
+    names = [
+        line.split(" ")[2]
+        for line in capsys.readouterr().out.splitlines()
+        if line.split(" ")[2] in {
+            "load_loan_tape",
+            "clean_loan_tape",
+            "map_product_hierarchy",
+            "derive_arrears",
+            "ead_ccf",
+            "pd_pit",
+            "pd_term_structure",
+            "lgd_secured",
+            "lgd_unsecured",
+            "staging_sicr",
+            "fli_overlay",
+            "discount_eir",
+            "ecl_calc",
+            "aggregate_reporting",
+            "export_disclosure",
+            "recon_controls",
+        }
+    ]
     assert names == [
         "load_loan_tape",
         "clean_loan_tape",
@@ -86,4 +107,5 @@ def test_engine_logs_legacy_steps_in_driver_order(capsys):
         "ecl_calc",
         "aggregate_reporting",
         "export_disclosure",
+        "recon_controls",
     ]

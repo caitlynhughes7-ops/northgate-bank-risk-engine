@@ -12,6 +12,7 @@ from .overlay import apply_overlay
 from .discount import discount
 from .ecl import calculate
 from .aggregate import aggregate
+from .recon import recon_controls
 
 def run(
     period: str,
@@ -22,7 +23,8 @@ def run(
 ):
     root = root or Path(__file__).resolve().parents[2]
     tape, collateral, scenarios = load_period(root, period)
-    x = ead_ccf(derive_arrears(map_products(clean(tape))))
+    arrears = derive_arrears(map_products(clean(tape)))
+    x = ead_ccf(arrears)
     x = pd_pit(x, scenarios, weight_file)
     curve, life = term_structure(x)
     legs = [secured(x, collateral, haircut_overrides), unsecured(x)]
@@ -32,4 +34,5 @@ def run(
     out = aggregate(result)
     if write:
         write_outputs(out, root, period)
+    recon_controls(arrears, result)
     return out, result

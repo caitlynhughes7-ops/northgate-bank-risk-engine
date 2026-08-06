@@ -33,3 +33,30 @@ macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
 | Step token | Python caller | `util_logging.py` / `m_util_logging.sas` | no specification basis |
 | Message token | Python caller | `util_logging.py` / `m_util_logging.sas` | no specification basis |
 | Timestamp | System clock (`datetime.now()` by default) | `util_logging.py` / `m_util_logging.sas` | no specification basis |
+
+## Recon controls log lineage
+
+The control artifact is log-only: `%recon_controls` in
+`sas/macros/m_recon_controls.sas` writes no dataset or file. The following
+components are emitted by the Python behaviour-equivalence port and map to
+the legacy macro and spec §8.
+
+| Log component | Source and transformation | Python / SAS implementation | Spec basis |
+|---|---|---|---|
+| NOTE severity prefix | `logging.csv:log_note_prefix` | `recon.py` / `%put NOTE:` | no specification basis |
+| ERROR severity prefix | `logging.csv:log_error_prefix` | `recon.py` / `%put ERROR:` | no specification basis |
+| `[ECL]` tag | `logging.csv:log_tag` | `recon.py` / `%put` text | no specification basis |
+| Step token | `recon_controls` macro step name | `recon.py` / `%log_step(recon_controls)` | no specification basis |
+| Drawn total | SAS `SUM(DRAWN_BAL)` over arrears tape | `recon.py` / `select sum(DRAWN_BAL)` | §8 control intent |
+| EAD total | SAS `SUM(EAD)` over account ECL frame | `recon.py` / `select sum(EAD)` | §8 control intent |
+| ECL total | SAS `SUM(ECL)` over account ECL frame | `recon.py` / `select sum(ECL)` | no explicit §8 control basis |
+| Null-stage count | Numeric-missing `STAGE` row count | `recon.py` / `where STAGE is null` | §8 staging control intent |
+| Null-stage threshold | `recon_controls.csv:null_stage_error_threshold` | `recon.py` / `%if &n_nullstage > 0` | §8 control intent |
+| Timestamp | Runtime clock via `log_step` | `util_logging.py` / `%log_step` | no specification basis |
+| BEST12 rendering | Configured format and retained width | `recon.py` / SQL `INTO` macro variables | no explicit basis; documented assumption |
+| RECON_TOL | Parsed from environment, exposed but unused | `recon.py` / `%let RECON_TOL` | required by §8 but absent from legacy code |
+
+The corrected comparison, tolerance, and blocking order required by §8 have
+no implementation basis in the legacy macro and remain an open governance
+decision. `tools/recon_whatif.py` quantifies candidate outcomes without
+changing the behaviour-equivalence control.

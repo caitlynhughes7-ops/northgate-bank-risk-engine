@@ -85,3 +85,45 @@ recorded with the regression run and must accompany the model change record.
   naive as SAS `datetime()` is) is unresolved. Decision required: Model
   Governance / Ops must decide the destination and timestamp policy; this
   migration does not resolve it.
+* **SC-10 recon comparison absent:** `%recon_controls` computes
+  `DRAWN_BAL`, `EAD`, and `ECL`, but never compares the totals. `RECON_TOL`
+  is loaded from the environment and unused, despite the v4.7 changelog
+  saying that the tolerance was widened; there is no tolerance to widen.
+  On 202409, the what-if comparison is **£912,115.62** (relative
+  **0.251201%**) and fails PROD (0.05%, currency excess **£730,564.69**)
+  and spec §8 (0.01%, excess **£875,805.44**) but passes UAT (0.5%).
+  Cause: no comparison branch exists in `m_recon_controls.sas`. Decision
+  required: determine the correct totals and tolerance; reproduce with
+  `tools/recon_whatif.py`.
+* **EO-05 controls run after publication:** the control macro is invoked
+  after disclosure and GL output, so a corrected blocking control would
+  not prevent publication. On 202409, the potentially withheld publication
+  is total EAD **£364,013,988.04** and total ECL **£8,975,618.47** at the
+  SEGMENT × STAGE grain. Cause: driver order. Decision required: approve
+  corrected pre-publication ordering; reproduce with
+  `tools/recon_whatif.py`.
+* **EO-08 `%put ERROR:` does not abort:** a null-stage error is logged but
+  processing returns normally; the shell `grep '^ERROR'` exits 1 only
+  after files have already been published. On 202409, null-stage count is
+  **0**, so there is no current currency impact. Decision required:
+  confirm whether operational handling should remain log-only; reproduce
+  with `tools/recon_whatif.py`.
+* **BEST12 leading blanks assumption:** SQL `INTO` values are rendered
+  with retained leading blanks under the documented BEST12. convention.
+  Cause: SAS SQL Procedure INTO documentation, not a captured log artifact.
+  Currency impact: none; this affects the log representation only. Decision
+  required: accept behaviour-pinning tests as evidence; reproduce the
+  rendering with `python/ecl/recon.py`.
+* **No captured legacy artifact for this unit:** evidence is
+  behaviour-pinning tests, with no numeric parity claim. Cause: no captured
+  legacy output exists for `%recon_controls`. Currency impact: none
+  measurable from an absent artifact. Decision required: accept the
+  behaviour-equivalence evidence basis; reproduce with
+  `tools/recon_whatif.py`.
+* **OPEN ESCALATION — corrected control basis:** EAD includes
+  `CCF × UNDRAWN` by construction under spec §5, so pairing it with
+  `DRAWN_BAL` may be conceptually wrong. The 202409 what-if comparison
+  produces the figures above, but the correct totals and tolerance remain
+  unresolved. Decision required: specify the corrected control basis and
+  tolerance before implementing a blocking control; reproduce with
+  `tools/recon_whatif.py`.

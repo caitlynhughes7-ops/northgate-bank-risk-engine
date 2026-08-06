@@ -12,6 +12,7 @@ jobs:
       - run: ruff check python tools
       - run: PYTHONPATH=python pytest -q
       - run: PYTHONPATH=python python tools/sensitivity.py
+      - run: PYTHONPATH=python python tools/recon_whatif.py
       - run: PYTHONPATH=python python tools/regression_harness.py
       - uses: actions/upload-artifact@v4
         if: always()
@@ -23,3 +24,8 @@ jobs:
         with:
           name: sensitivity-202409
           path: data/output/sensitivity_202409.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recon-whatif-202409
+          path: data/output/whatif/recon_controls_202409.json
