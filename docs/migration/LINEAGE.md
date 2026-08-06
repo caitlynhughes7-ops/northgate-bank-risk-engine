@@ -23,3 +23,14 @@ explicitly retained for parity: the v4.3 frozen scenario weights, the BTL
 haircut code mismatch, the KI-041 personal-loan discount formula, and the
 specific uplift, overlay, CCF and PD masterscale values embedded in later SAS
 macros. Their governance status is recorded in `PARITY_FINDINGS.md`.
+
+## Product display-format lineage
+
+| Display output | Source and transformation | Python implementation | Spec basis / calculation status |
+|---|---|---|---|
+| SEGMENT display label | Segment code rendered by the `$seg.` format in `sas/formats/fmt_product.sas` | `formats.segment_label` / `formats.segment_labels`, backed by `config/rules/fmt_seg.csv` | No basis in `docs/ECL_Model_Spec_v3_2016.md`; display-only and outside the calculation path |
+| STAGE display label | Numeric stage rendered by the `stage.` format in `sas/formats/fmt_product.sas` | `formats.stage_label` / `formats.stage_labels`, backed by `config/rules/fmt_stage.csv` | No basis in `docs/ECL_Model_Spec_v3_2016.md`; display-only and outside the calculation path |
+
+These formats are defined in the legacy autoexec but are not applied by any
+reachable batch program. The Python unit preserves their display behaviour
+without importing it into any calculation module.
