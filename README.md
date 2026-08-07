@@ -11,6 +11,15 @@ Downstream: Finance GL feed (ECL_GL_FEED), Board Risk Pack, ICAAP/Pillar 3 discl
 
     ./jobs/monthly_ecl.sh 202409 prod
 
+The migrated Python engine can be run from the repository root:
+
+    PYTHONPATH=python python -m ecl.cli --period 202409
+
+The regression harness compares the result with the captured SAS baseline and
+writes `data/output/parity_202409.json` and a companion CSV:
+
+    PYTHONPATH=python python tools/regression_harness.py
+
 See `docs/ops/RUNBOOK.md`.
 
 ## Documentation
