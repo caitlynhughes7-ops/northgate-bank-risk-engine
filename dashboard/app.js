@@ -4,12 +4,19 @@ const SOURCES = {
   output:   '../data/output/ecl_by_segment_' + PERIOD + '.csv',
 };
 const SEG_LABEL = {
-  RETAIL_MORTGAGE: 'Retail mortgages',
-  BTL_MORTGAGE: 'Buy to let',
+  RETAIL_MORTGAGE: 'Home mortgages',
+  BTL_MORTGAGE: 'Landlord mortgages',
   PERSONAL_LOAN: 'Personal loans',
   CREDIT_CARD: 'Credit cards',
   OVERDRAFT: 'Overdrafts',
-  SME_TERM: 'SME lending',
+  SME_TERM: 'Small business loans',
+};
+
+// The three IFRS 9 stages, named by what they mean rather than numbered.
+const STAGE_LABEL = {
+  1: 'Performing',
+  2: 'On the watchlist',
+  3: 'In default',
 };
 
 const TOLERANCE = 0.01;
@@ -40,7 +47,11 @@ function parseCsv(text) {
 
 async function load(kind) {
   const res = await fetch(SOURCES[kind], {cache: 'no-store'});
-  if (!res.ok) throw new Error(kind + ' not available (' + res.status + ')');
+  if (!res.ok) {
+    const which = kind === 'output' ? 'new' : 'old';
+    throw new Error('The ' + which + " engine's figures could not be loaded from " +
+      SOURCES[kind] + ' (' + res.status + ').');
+  }
   return parseCsv(await res.text());
 }
 
@@ -66,6 +77,13 @@ function chart(rows, other) {
   const a = bySegment(rows);
   const b = other ? new Map(bySegment(other)) : null;
   const max = Math.max(...a.map(x => x[1]), ...(b ? [...b.values()] : [0]));
+  if (b) {
+    const legend = document.createElement('p');
+    legend.className = 'legend';
+    legend.innerHTML = '<span class="key"></span> The old engine' +
+      '<span class="key alt"></span> The new engine';
+    el.appendChild(legend);
+  }
   a.forEach(([seg, v]) => {
     const row = document.createElement('div');
     row.className = 'row';
@@ -89,8 +107,9 @@ function grid(rows, other) {
   const thead = document.querySelector('#grid thead');
   const tbody = document.querySelector('#grid tbody');
   const cols = other
-    ? ['Segment', 'Stage', 'Exposures', 'EAD', 'EAD variance', 'ECL (legacy)', 'ECL (migrated)', 'ECL variance', 'Status']
-    : ['Segment', 'Stage', 'Exposures', 'EAD', 'ECL', 'Coverage'];
+    ? ['Type of lending', 'Credit condition', 'Loans', 'Lending', 'Lending difference',
+       'Provision, old', 'Provision, new', 'Provision difference', 'Result']
+    : ['Type of lending', 'Credit condition', 'Loans', 'Lending', 'Provision', 'Provision rate'];
   thead.innerHTML = '<tr>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr>';
 
   const key = r => r.SEGMENT + '|' + r.STAGE;
@@ -98,8 +117,9 @@ function grid(rows, other) {
 
   tbody.innerHTML = rows.map(r => {
     const label = (SEG_LABEL[r.SEGMENT] || r.SEGMENT);
+    const stage = (STAGE_LABEL[r.STAGE] || r.STAGE);
     if (!om) {
-      return '<tr><td>' + label + '</td><td>' + r.STAGE + '</td><td>' +
+      return '<tr><td>' + label + '</td><td>' + stage + '</td><td>' +
         r.N_EXPOSURES + '</td><td>' + gbp(r.TOTAL_EAD) + '</td><td>' +
         gbp(r.TOTAL_ECL) + '</td><td>' + pct(r.COVERAGE) + '</td></tr>';
     }
@@ -108,12 +128,12 @@ function grid(rows, other) {
     const diff = nv === null ? null : nv - r.TOTAL_ECL;
     const eadDiff = o ? o.TOTAL_EAD - r.TOTAL_EAD : null;
     const ok = !!o && withinTolerance(diff) && withinTolerance(eadDiff);
-    return '<tr><td>' + label + '</td><td>' + r.STAGE + '</td><td>' +
+    return '<tr><td>' + label + '</td><td>' + stage + '</td><td>' +
       r.N_EXPOSURES + '</td><td>' + gbp(r.TOTAL_EAD) + '</td><td>' +
       (eadDiff === null ? '&mdash;' : variance(eadDiff)) + '</td><td>' +
       gbp(r.TOTAL_ECL) + '</td><td>' + (nv === null ? '&mdash;' : gbp(nv)) + '</td><td>' +
       (diff === null ? '&mdash;' : variance(diff)) + '</td><td class="' +
-      (ok ? 'pass">within tolerance' : 'fail">differs') + '</td></tr>';
+      (ok ? 'pass">agrees' : 'fail">differs') + '</td></tr>';
   }).join('');
 }
 
@@ -133,16 +153,18 @@ async function render() {
         withinTolerance(o.TOTAL_EAD - r.TOTAL_EAD)).length;
       const eclExact = pairs.filter(([r, o]) => o && o.TOTAL_ECL === r.TOTAL_ECL).length;
       status.innerHTML = matched === n
-        ? '<span class="pass">Parity: ' + matched + '/' + n + ' segment-stage cells within the £' +
-          TOLERANCE.toFixed(2) + ' parity tolerance on ECL and EAD' +
-          (eclExact === n ? ', with ECL identical to the penny in every cell' : '') + '.</span>'
-        : '<span class="fail">Parity: ' + matched + '/' + n + ' cells within tolerance.</span>';
+        ? '<span class="pass">The two engines agree: all ' + matched + ' of ' + n +
+          ' rows are within the agreed £' + TOLERANCE.toFixed(2) + ' tolerance on both provision and lending' +
+          (eclExact === n ? ', and the provision is identical to the penny in every row' : '') + '.</span>'
+        : '<span class="fail">The two engines disagree: only ' + matched + ' of ' + n +
+          ' rows are within the agreed tolerance.</span>';
     } else {
       const rows = await load(mode);
       kpis(rows);
       chart(rows, null);
       grid(rows, null);
-      status.textContent = 'Source: ' + SOURCES[mode];
+      status.textContent = (mode === 'output' ? 'The new engine' : 'The old engine') +
+        ', read from ' + SOURCES[mode];
     }
   } catch (e) {
     status.innerHTML = '<span class="fail">' + e.message + '</span>';
