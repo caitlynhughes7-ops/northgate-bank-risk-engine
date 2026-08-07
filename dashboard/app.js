@@ -109,7 +109,7 @@ function grid(rows, other) {
   const cols = other
     ? ['Type of lending', 'Credit condition', 'Loans', 'Lending', 'Lending difference',
        'Provision, old', 'Provision, new', 'Provision difference', 'Result']
-    : ['Type of lending', 'Credit condition', 'Loans', 'Lending', 'Provision', 'Share of lending'];
+    : ['Type of lending', 'Credit condition', 'Loans', 'Lending', 'Provision', 'Provision rate'];
   thead.innerHTML = '<tr>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr>';
 
   const key = r => r.SEGMENT + '|' + r.STAGE;
