@@ -35,17 +35,23 @@ main { padding: 22px 28px 48px; max-width: 1180px; }
 .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
 .card h2 { margin: 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .card p { margin: 8px 0 0; font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.card p.hint { margin: 6px 0 0; font-size: 11.5px; font-weight: 400; color: var(--muted); line-height: 1.35; }
 .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-top: 18px; }
 .panel h3 { margin: 0 0 14px; font-size: 14px; }
 .chart { display: grid; gap: 9px; }
-.row { display: grid; grid-template-columns: 150px 1fr 118px; align-items: center; gap: 12px; }
+.row { display: grid; grid-template-columns: 168px 1fr 118px; align-items: center; gap: 12px; }
 .row span:first-child { color: var(--muted); font-size: 12.5px; }
+.legend { display: flex; align-items: center; gap: 6px; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+.legend .key { width: 11px; height: 11px; border-radius: 3px; background: var(--accent); }
+.legend .key.alt { background: #94a3b8; margin-left: 12px; }
 .bar { display: block; height: 16px; border-radius: 4px; background: var(--accent); min-width: 2px; }
 .bar.alt { background: #94a3b8; }
 .val { text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; font-size: 13px; }
+th, td { padding: 8px 9px; border-bottom: 1px solid var(--line); text-align: right; font-size: 13px; }
 th:first-child, td:first-child { text-align: left; }
+/* Row labels read as one line so the grid stays scannable from the back of a room. */
+td:first-child, td:nth-child(2) { white-space: nowrap; }
 thead th { color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
 tbody tr:hover { background: #fafbfc; }
 .pass { color: var(--good); font-weight: 600; }

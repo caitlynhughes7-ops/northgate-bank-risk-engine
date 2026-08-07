@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Northgate Bank &mdash; IFRS 9 Provision Dashboard</title>
+<title>Northgate Bank &mdash; Loan Loss Provision Dashboard</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -10,35 +10,47 @@
   <div class="brand">
     <span class="mark">NB</span>
     <div>
-      <h1>Group Credit Risk &mdash; IFRS 9 Provision Dashboard</h1>
-      <p class="sub">Reporting period <strong id="period">2024-09</strong> &middot; Retail &amp; SME lending</p>
+      <h1>Group Credit Risk &mdash; Loan Loss Provision Dashboard</h1>
+      <p class="sub">Money set aside for loans expected to go bad &middot; Reporting period <strong id="period">September 2024</strong> &middot; Household and small business lending</p>
     </div>
   </div>
   <div class="src">
-    <label for="source">Engine</label>
+    <label for="source">Figures from</label>
     <select id="source">
-      <option value="expected">Legacy SAS engine</option>
-      <option value="output">Migrated engine</option>
-      <option value="compare">Compare (variance)</option>
+      <option value="expected">The old engine</option>
+      <option value="output">The new engine</option>
+      <option value="compare">Both, side by side</option>
     </select>
   </div>
 </header>
 
 <main>
   <section class="cards">
-    <div class="card"><h2>Total EAD</h2><p id="kpi-ead">&mdash;</p></div>
-    <div class="card"><h2>Total ECL</h2><p id="kpi-ecl">&mdash;</p></div>
-    <div class="card"><h2>Coverage ratio</h2><p id="kpi-cov">&mdash;</p></div>
-    <div class="card"><h2>Stage 2 + 3 EAD</h2><p id="kpi-s23">&mdash;</p></div>
+    <div class="card">
+      <h2>Total lending</h2><p id="kpi-ead">&mdash;</p>
+      <p class="hint">What the bank is owed across every loan in scope</p>
+    </div>
+    <div class="card">
+      <h2>Provision set aside</h2><p id="kpi-ecl">&mdash;</p>
+      <p class="hint">The losses the bank expects on that lending</p>
+    </div>
+    <div class="card">
+      <h2>Provision rate</h2><p id="kpi-cov">&mdash;</p>
+      <p class="hint">Set aside for every £100 lent</p>
+    </div>
+    <div class="card">
+      <h2>Deteriorated lending</h2><p id="kpi-s23">&mdash;</p>
+      <p class="hint">Loans on the watchlist or already in default</p>
+    </div>
   </section>
 
   <section class="panel">
-    <h3>ECL by segment</h3>
+    <h3>Provision by type of lending</h3>
     <div id="chart" class="chart"></div>
   </section>
 
   <section class="panel">
-    <h3>Provision by segment and stage</h3>
+    <h3>Provision by type of lending and credit condition</h3>
     <table id="grid">
       <thead></thead>
       <tbody></tbody>
